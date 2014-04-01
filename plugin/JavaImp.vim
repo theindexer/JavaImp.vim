@@ -473,16 +473,17 @@ fun! <SID>JavaImpGenerate()
     "silent exe "write! /tmp/raw_unique"
 
     " before we write to g:JavaImpClassList, close g:JavaImpClassList
-    " exe "bdelete ".g:JavaImpClassList (we do this because a user might
+    " exe "bwipeout ".g:JavaImpClassList (we do this because a user might
     " want to do a JavaImpGenerate after having been dissapointed that
     " his JavaImpInsert missed something... 
     if (bufexists(g:JavaImpClassList))
-        silent exe "bd! " g:JavaImpClassList
+        silent exe "bwipeout! " g:JavaImpClassList
     endif
 
     silent exe "write!" g:JavaImpClassList
     close
     " Delete the temporary file
+	silent exe "bwipeout! " impfile
     call delete(impfile)
     echo "Done.  Found " . classCount . " classes (". uniqueClassCount. " unique)"
 endfun
