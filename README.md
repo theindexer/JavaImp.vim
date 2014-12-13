@@ -237,9 +237,9 @@ years of dust left some shortcommings, and so I decided to fork it earlier this
 year.  At first I used these changes privately, but now I've decided to publish
 them so that others can benefit.
 
-Credits:
+Credits
 --------
-William Lee <wl1012@yahoo.com>
+William Lee &lt;wl1012@yahoo.com&gt;
 (c) 2002-2004. All Rights Reserved
 
 Russ Adams (rustushki)
