@@ -408,7 +408,7 @@ endif
 " -------------------------------------------------------------------  
 
 "Generates the mapping file
-fun! <SID>JavaImpGenerate()
+function! <SID>JavaImpGenerate()
     if (<SID>JavaImpChkEnv() != 0)
         return
     endif
@@ -463,8 +463,8 @@ fun! <SID>JavaImpGenerate()
     "silent exe "write! /tmp/raw_formatted"
 
     " Sorting the file
-    echo "Sorting the classes, this may take a while ..."
-    1,$call <SID>Sort("s:Strcmp")
+    echo "Sorting the classes"
+	%sort
     "silent exe "write! /tmp/raw_sorted"
 
     echo "Assuring uniqueness..." 
@@ -990,13 +990,11 @@ endfun
 " -------------------------------------------------------------------  
 
 " Sort the import statements in the current file.
-fun! <SID>JavaImpSort()
+function! <SID>JavaImpSort()
     split
     let hasImport = <SID>JavaImpGotoFirst()
     if (hasImport == 0)
-        close
-        echo "No import statement found."
-        return
+        echom "No import statement found."
     else
         let firstImp = line(".")
         call <SID>JavaImpGotoLast()
@@ -1007,18 +1005,37 @@ fun! <SID>JavaImpSort()
             call <SID>JavaImpGotoLast()
             let lastImp = line(".")
         endif
-        if (g:JavaImpSortJavaFirst == 1)
-            exe "" . firstImp . "," . lastImp . "call <SID>Sort(\"s:JavaImpStrcmp\")"
-        else
-            exe "" . firstImp . "," . lastImp . "call <SID>Sort(\"s:Strcmp\")"
-        endif
+
+		" Sort the Import Statements using Vim's Builtin 'sort' Function.
+		execute firstImp . "," . lastImp . "sort"
+
+		if (g:JavaImpSortJavaFirst == 1)
+			" Find the First java.* Import.
+			call <SID>JavaImpGotoFirstMatchingImport("java", "w")
+			let firstImp = line(".")
+
+			" Find the Last java.* Import.
+			call <SID>JavaImpGotoFirstMatchingImport("java", "b")
+			let lastImp = line(".")
+
+			" Place this range of lines before the first import.
+			execute firstImp . "," . lastImp . "delete"
+			call <SID>JavaImpGotoFirst()
+			normal P
+
+			" Update the Import Statement Range.
+			call <SID>JavaImpGotoFirst()
+			let firstImp = line(".")
+			call <SID>JavaImpGotoLast()
+			let lastImp = line(".")
+		endif
 
         if (g:JavaImpSortPkgSep > 0)
             call <SID>JavaImpAddPkgSep(firstImp, lastImp, g:JavaImpSortPkgSep)
         endif
-        close
-        return
     endif
+
+	close
 endfun
 
 " Remove empty lines in the range
@@ -1252,91 +1269,6 @@ endfunction
 " (Helpers) Vim-sort for those of us who don't have unix or cygwin 
 " -------------------------------------------------------------------  
 
-" Function for use with Sort(), to compare.  This gives preferences to the
-" java* import for I want it to appear first.
-func! <SID>JavaImpStrcmp(str1, str2)
-    if (match(a:str1, '^\s*import\s*java.*') >= 0 && match(a:str2, '^\s*import\s*java.*') == -1)
-        return -1
-    endif
-
-    if (match(a:str1, '^\s*import\s*java.*') == -1 && match(a:str2, '^\s*import\s*java.*') >= 0)
-        return 1
-    endif
-
-    if (a:str1 < a:str2)
-        return -1
-    elseif (a:str1 > a:str2)
-        return 1
-    else
-        return 0
-    endif
-endfunction
-
-" Sorting functions from the Vim docs.  Use this instead of the sort binary.
-"
-" Function for use with Sort(), to compare two strings.
-function! <SID>Strcmp(str1, str2)
-    if (a:str1 < a:str2)
-        return -1
-    elseif (a:str1 > a:str2)
-        return 1
-    else
-        return 0
-    endif
-endfunction
-
-" Sort lines.  SortR() is called recursively.
-func! <SID>SortR(start, end, cmp)
-    if (a:start >= a:end)
-        return
-    endif
-    let partition = a:start - 1
-    let middle = partition
-    let partStr = getline((a:start + a:end) / 2)
-    let i = a:start
-    while (i <= a:end)
-        let str = getline(i)
-        exec "let result = " . a:cmp . "(str, partStr)"
-        if (result <= 0)
-            " Need to put it before the partition.  Swap lines i and partition.
-            let partition = partition + 1
-            if (result == 0)
-                let middle = partition
-            endif
-            if (i != partition)
-                let str2 = getline(partition)
-                call setline(i, str2)
-                call setline(partition, str)
-            endif
-        endif
-        let i = i + 1
-    endwhile
-
-    " Now we have a pointer to the "middle" element, as far as partitioning
-    " goes, which could be anywhere before the partition.  Make sure it is at
-    " the end of the partition.
-    if (middle != partition)
-        let str = getline(middle)
-        let str2 = getline(partition)
-        call setline(middle, str2)
-        call setline(partition, str)
-    endif
-    call <SID>SortR(a:start, partition - 1, a:cmp)
-    call <SID>SortR(partition + 1, a:end, a:cmp)
-endfunc
-
-" To Sort a range of lines, pass the range to Sort() along with the name of a
-" function that will compare two lines.
-func! <SID>Sort(cmp) range
-    if (g:JavaImpSortBin != "")
-        execute a:firstline.",".a:lastline."!" . g:JavaImpSortBin
-    else
-        " the default is using the pure vim method... but this sort
-        " method does recursion too deep if the file is huge
-        call <SID>SortR(a:firstline, a:lastline, a:cmp)
-    endif
-endfunc
-
 " -------------------------------------------------------------------  
 " (Helpers) Goto...
 " -------------------------------------------------------------------  
@@ -1356,26 +1288,25 @@ endfun
 
 " Go to the last import statement that it can find.  Returns 1 if an import is
 " found, returns 0 if not.
-fun! <SID>JavaImpGotoLast()
-    " First search for the className in an import statement
-    normal G$
-    let flags = "w"
-    let pattern = '^\s*import\s\s*.*;'
-    let importFound = 0
-    while search(pattern, flags) > 0
-        let importFound = 1
-        let flags = "W"
-    endwhile
-    return importFound
-endfun
+function! <SID>JavaImpGotoLast()
+	return <SID>JavaImpGotoFirstMatchingImport('', 'b')
+endfunction
 
 " Go to the last import statement that it can find.  Returns 1 if an import is
 " found, returns 0 if not.
-fun! <SID>JavaImpGotoFirst()
-    normal G$
-    let pattern = '^\s*import\s\s*.*;'
-    return (search(pattern, "w") > 0)
-endfun
+function! <SID>JavaImpGotoFirst()
+	return <SID>JavaImpGotoFirstMatchingImport('', 'w')
+endfunction
+
+function! <SID>JavaImpGotoFirstMatchingImport(pattern, flags)
+	normal G$
+	let pattern = '^\s*import\s\s*'
+	if (a:pattern != "")
+		let pattern = l:pattern . a:pattern . '\.'
+	endif
+	let pattern = l:pattern . '.*;'
+    return (search(l:pattern, a:flags) > 0)
+endfunction
 
 " -------------------------------------------------------------------  
 " (Helpers) Miscellaneous 
