@@ -14,6 +14,7 @@ Features
 
 Requirements
 ------------
+- Vim 7+ or Neovim.
 - The 'jar' binary must be your path.
 - A web browser such as Chrome or Firefox or a pager such as w3m or lynx.
 
@@ -198,23 +199,21 @@ distributions) with your JDK distribution, by using the jmplst file:
 
 To expose the standard JDK classes to JavaImp:
 
-1. If you have "sed":
-    > jar tf $JAVA_HOME/src.jar | sed -e 's#^src/##' > jdk.jmplst
-   
-(or if you just have the zip file with the JDK distribution, use src.zip
-instead)
+1. Generate your jmplst file.
 
-If you do not have "sed":
-    > jar tf $JAVA_HOME/src.jar > jdk.jmplst
-    > vim jdk.jmplst
+        # If you have "sed":
+        $ jar tf $JAVA_HOME/src.jar | sed -e 's#^src/##' > jdk.jmplst
+        
+        # If you do not have "sed":
+        $ jar tf $JAVA_HOME/src.jar > jdk.jmplst
+        $ vim jdk.jmplst
 
-Execute the following vim commands:
+        # Execute the following vim commands:
+        1G0<C-v>G3ld:w
 
-    1G0<C-v>G3ld:w
-
-This will select vertically the all the "src/" prefixes and delete them, then
-save the file. Essentially, we want to get rid of the src directory otherwise
-it'll screw up the import statements.
+    This will select vertically the all the "src/" prefixes and delete them, then
+    save the file. Essentially, we want to get rid of the src directory otherwise
+    it'll screw up the import statements.
 
 2. Put the jdk.jmplst in a directory that you've added in your g:JavaImpPaths.
 For example, I put my jdk.jmplst in $HOME/vim/JavaImp/jmplst directory, and add
