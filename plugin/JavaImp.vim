@@ -685,25 +685,31 @@ function! <SID>JavaImpSort()
 		" Sort the Import Statements using Vim's Builtin 'sort' Function.
 		execute firstImp . "," . lastImp . "sort"
 
+		" Special Handling to put java.* imports first.
+		" TODO: Improve by allowing other root packages to be prioritized
+		" first as well.  For example: 1st java.*, 2nd javax.*, 3rd org.*, 4th
+		" everything else in sorted order.
 		if (g:JavaImpSortJavaFirst == 1)
-			" Find the First java.* Import.
-			call <SID>JavaImpGotoFirstMatchingImport("java", "w")
-			let firstImp = line(".")
+			" Find the First java.* Import and 
+			let l:javaImportFound = <SID>JavaImpGotoFirstMatchingImport("java", "w")
+			if (l:javaImportFound)
+				let firstImp = line(".")
 
-			" Find the Last java.* Import.
-			call <SID>JavaImpGotoFirstMatchingImport("java", "b")
-			let lastImp = line(".")
+				" Find the Last java.* Import.
+				call <SID>JavaImpGotoFirstMatchingImport("java", "b")
+				let lastImp = line(".")
 
-			" Place this range of lines before the first import.
-			execute firstImp . "," . lastImp . "delete"
-			call <SID>JavaImpGotoFirst()
-			normal P
+				" Place this range of lines before the first import.
+				execute firstImp . "," . lastImp . "delete"
+				call <SID>JavaImpGotoFirst()
+				normal P
 
-			" Update the Import Statement Range.
-			call <SID>JavaImpGotoFirst()
-			let firstImp = line(".")
-			call <SID>JavaImpGotoLast()
-			let lastImp = line(".")
+				" Update the Import Statement Range.
+				call <SID>JavaImpGotoFirst()
+				let firstImp = line(".")
+				call <SID>JavaImpGotoLast()
+				let lastImp = line(".")
+			endif
 		endif
 
         if (g:JavaImpSortPkgSep > 0)
