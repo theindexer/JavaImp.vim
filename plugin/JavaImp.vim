@@ -107,12 +107,13 @@ function! <SID>JavaImpGenerate()
         let currPaths = currPaths . g:JavaImpPathSep
     endif
 
-    "echo currPaths
     while (currPaths != "" && currPaths !~ '^ *' . g:JavaImpPathSep . '$')
-        let sepIdx = stridx(currPaths, g:JavaImpPathSep)
-        " Gets the substring exluding the newline
+		" Cut off the first path from the delimeted list of paths to examine.
+		let sepIdx = stridx(currPaths, g:JavaImpPathSep)
         let currPath = strpart(currPaths, 0, sepIdx)
 
+		" Uncertain what this is doing.
+		" currPath is the same before and after.
         let pkgDepth = substitute(currPath, '^.*{\(\d\+\)}.*$', '\1', '')
         let currPath = substitute(currPath, '^\(.*\){.*}.*', '\1', '')
 
@@ -184,29 +185,22 @@ fun! <SID>JavaAppendClass(cpath, relativeTo)
             call append(0, a:relativeTo)
         endif
     elseif (isdirectory(a:cpath))
-        " no class we need to determine whether the path is a directory or
-        " not, if it is a directory, we need to run this recursively.
-        let l:files = glob(a:cpath . "/*") 
-        if (strlen(l:files) != 0)
-            let l:files = l:files . "\n"
-        endif
-        while (l:files != "" && l:files !~ '^\_s*$')
-            let l:sepIdx = stridx(l:files, "\n")
-            " Gets the substring exluding the newline
-            let l:file = strpart(l:files, 0, l:sepIdx)
-            " echo "file [".l:file."] index(".l:sepIdx.")\nleft [\n".l:files."]"
-            let l:pkgcomponent = fnamemodify(l:file, ":t")
-            let l:newRelativeTo = a:relativeTo 
-            if (a:relativeTo == "")
-                let l:newpackage = l:pkgcomponent
-            else
-                let l:newpackage = a:relativeTo. "/" . l:pkgcomponent
-            endif
-            " we recurse until we hit a real file 
-            call  <SID>JavaAppendClass(l:file,l:newpackage)
-            " ready the next bit of the while loop 
-            let l:files = strpart(l:files, l:sepIdx + 1, strlen(l:files) - l:sepIdx - 1)
-        endwhile
+		" Recursively fetch all Java files from the provided directory path.
+        let l:javaList = glob(a:cpath . "/**/*.java", 1, 1) 
+		let l:clssList = glob(a:cpath . "/**/*.class", 1, 1) 
+		let l:list = l:javaList + l:clssList
+
+		" Include a trailing slash so that we don't leave a slash at the
+		" beginning of the fully qualified classname.
+		let l:cpath = a:cpath . "/"
+		
+		" Add each matching file to the class index buffer.
+		" The format of each entry will be akin to: org/apache/xerces/Bubba
+		for l:filename in l:list
+			let l:filename = substitute(l:filename, l:cpath, "", "g")
+			call append(0, l:filename)
+		endfor
+
     elseif (match(a:cpath, '\(\.jar$\)') > -1)
         " Check if the jar file exists, if not, we return immediately.
         if (!filereadable(a:cpath))
@@ -291,6 +285,10 @@ fun! <SID>JavaImpFormatList()
         let l:matchClassName = l:matchClassName + 1 
         let l:className = strpart(l:currentLine, l:matchClassName)
         let l:className = substitute(l:className,  l:classExtensions, '', '')
+
+		" TODO: It'd be better if we could handle the importing of inner
+		" classes.
+		"
         " subst '$' -> '.' for classes defined inside other classes
         " don't know if it will do anything useful, but at least it 
         " will be less incorrect than it was before
