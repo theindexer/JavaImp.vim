@@ -2,24 +2,24 @@
 " Mappings 
 " -------------------------------------------------------------------  
 
-command! -nargs=? JIX call <SID>JavaImpQuickFix()
-command! -nargs=? JI call <SID>JavaImpInsert(1)
-command! -nargs=? JavaImp call <SID>JavaImpInsert(1)
-command! -nargs=? JavaImpSilent call <SID>JavaImpInsert(0)
+command! -nargs=? JIX              call <SID>JavaImpQuickFix()
+command! -nargs=? JI               call <SID>JavaImpInsert(1)
+command! -nargs=? JavaImp          call <SID>JavaImpInsert(1)
+command! -nargs=? JavaImpSilent    call <SID>JavaImpInsert(0)
 
-command! -nargs=? JIG call <SID>JavaImpGenerate()
-command! -nargs=? JavaImpGenerate call <SID>JavaImpGenerate()
+command! -nargs=? JIG              call <SID>JavaImpGenerate()
+command! -nargs=? JavaImpGenerate  call <SID>JavaImpGenerate()
 
-command! -nargs=? JIS call <SID>JavaImpSort()
-command! -nargs=? JavaImpSort call <SID>JavaImpSort()
+command! -nargs=? JIS              call <SID>JavaImpSort()
+command! -nargs=? JavaImpSort      call <SID>JavaImpSort()
 
-command! -nargs=? JID call <SID>JavaImpDoc()
-command! -nargs=? JavaImpDoc call <SID>JavaImpDoc()
+command! -nargs=? JID              call <SID>JavaImpDoc()
+command! -nargs=? JavaImpDoc       call <SID>JavaImpDoc()
 
-command! -nargs=? JIF call <SID>JavaImpFile(0)
-command! -nargs=? JavaImpFile call <SID>JavaImpFile(0)
+command! -nargs=? JIF              call <SID>JavaImpFile(0)
+command! -nargs=? JavaImpFile      call <SID>JavaImpFile(0)
 
-command! -nargs=? JIFS call <SID>JavaImpFile(1)
+command! -nargs=? JIFS             call <SID>JavaImpFile(1)
 command! -nargs=? JavaImpFileSplit call <SID>JavaImpFile(1)
 
 " -------------------------------------------------------------------  
@@ -34,19 +34,17 @@ elseif(has("win16") || has("win32") || has("win95") ||
 else
     let s:SL = "/"
 endif
-" Sort the import with preferences to the java.* classes
-"
-"
+
 if !exists("g:JavaImpDataDir")
     let g:JavaImpDataDir = expand("$HOME") . s:SL . "vim" . s:SL . "JavaImp"
 endif
 
-" Deprecated
 if !exists("g:JavaImpClassList")
     let g:JavaImpClassList = g:JavaImpDataDir . s:SL . "JavaImp.txt"
 endif
 
-" Deprecated
+" Sort the import with preferences to the java.* classes
+" TODO: Will be replaced with different functionality soon.
 if !exists("g:JavaImpSortJavaFirst")
     let g:JavaImpSortJavaFirst = 1
 endif
@@ -67,10 +65,6 @@ if !exists("g:JavaImpSortPkgSep")
     else
         let g:JavaImpSortPkgSep = 0
     endif
-endif
-
-if !exists("g:JavaImpSortBin")
-    let g:JavaImpSortBin = "sort" 
 endif
 
 if !exists("g:JavaImpPathSep")
