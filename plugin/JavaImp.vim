@@ -784,15 +784,29 @@ func! <SID>JavaImpAddPkgSep(fromLine, toLine, depth)
     endwhile
 endfunction
 
-" Returns the full path of the javadoc based on the base currPath and a
-" fully-qualified class name.
-fun! <SID>JavaImpGetFile(basePath, fullClassName, ext)
-    " convert the '.' to '/'
+" Returns the full path of the Java source file or JavaDoc.
+"
+" Set 'ext' to:
+"  .html - for JavaDoc.
+"  .java - for Java files.
+"
+" @param basePath - the base path to search for the class.
+" @param fullClassName - fully qualified class name
+" @param ext - extension to search for.
+function <SID>JavaImpGetFile(basePath, fullClassName, ext)
+    " Convert the '.' to '/'.
     let df = substitute(a:fullClassName, '\.', '/', "g")
+
+	" Construct the full path to the possible file.
     let h = df . a:ext
-    let rtn = expand(a:basePath . "/" . h)
-    return rtn
-endfun
+    let l:rtn = expand(a:basePath . "/" . h)
+
+	" If the file is not readable, return an empty string.
+	if filereadable(rtn) == 0
+		let l:rtn = ""
+	endif
+	return l:rtn
+endfunction
 
 " View the doc
 fun! <SID>JavaImpViewDoc(f)
@@ -805,29 +819,41 @@ endfun
 " -------------------------------------------------------------------  
 " Java Source Viewing
 " -------------------------------------------------------------------  
-fun! <SID>JavaImpFile(doSplit)
+function! <SID>JavaImpFile(doSplit)
     " We would like to save the current buffer first:
     if expand("%") != '' 
         update
     endif
-    " choose the current word for the class
+
+	" Class Name to search for is the Current Word.
     let className = expand("<cword>")
+
+	" Find the fully qualified classname for this class.
     let fullClassName = <SID>JavaImpFindFullName(className)
     if (fullClassName == "")
-        echo "Can not find class " . className
+        echo "Can't find class " . className
         return 
+
+	" Otherwise, search for the class.
     else
         let currPaths = g:JavaImpPaths
+
         " See if currPaths has a separator at the end, if not, we add it.
         if (match(currPaths, g:JavaImpPathSep . '$') == -1)
             let currPaths = currPaths . g:JavaImpPathSep
         endif
+
         while (currPaths != "" && currPaths !~ '^ *' . g:JavaImpPathSep . '$')
+			" Find First Separator (this marks the end of the Next Path).
             let sepIdx = stridx(currPaths, g:JavaImpPathSep)
-            " Gets the substring exluding the newline
+
+			" Retrieve the Next Path.
             let currPath = strpart(currPaths, 0, sepIdx)
-            "echo "Searching in path: " . currPath
+
+            " Chop off the Next Path--this leaves only the remaining paths to
+			" search.
             let currPaths = strpart(currPaths, sepIdx + 1, strlen(currPaths) - sepIdx - 1)
+
             if (isdirectory(currPath))
                 let f = <SID>JavaImpGetFile(currPath, fullClassName, ".java")
                 if (f != "")
@@ -841,7 +867,7 @@ fun! <SID>JavaImpFile(doSplit)
         endwhile
         echo "Can not find " . fullClassName . " in g:JavaImpPaths"
     endif
-endfun
+endfunction
 
 " -------------------------------------------------------------------  
 " Java Doc Viewing
