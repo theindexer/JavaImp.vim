@@ -7,10 +7,11 @@ your choice.
 Features
 --------
 - Import Statement Management:
-  - Semi-automatic insertion
-  - Sorting
-  - Styling/Organizing
-- JavaDoc Display
+  - Semi-automatic insertion.
+  - Sorting.
+  - Styling/Organizing.
+- Quick source lookup referenced classes.
+- JavaDoc Display.
 
 Requirements
 ------------
@@ -22,41 +23,33 @@ Installation
 ------------
 You can use a modern Vim package manager such as Vundle or NeoBundle.  Simply add the following into your .vimrc.
 
-    Plugin 'rustushki/JavaImp.vim--Lee'
+    Plugin 'rustushki/JavaImp.vim'
 
 Then run :PluginInstall.
 
-
 You need to set two global variables in your .vimrc in order for this to work:
 
-    let g:JavaImpPaths = "..."
-    let g:JavaImpDataDir = "..."
+1. Paths to Java Project Source files.
 
-The g:JavaImpPaths is a comma separated list of paths that point to the roots
-of the 'com' or 'org' etc.
+        let g:JavaImpPaths =
+	       \ $HOME . "/project/src/java," .
+           \ $HOME . "/project2/javasrc," .
+           \ $HOME . "/project3/javasrc"
 
-For example: if you have your Java source files in /project/src/java/com/blah
-and /project2/javasrc/org/blah...., you'll put this in your .vimrc file:
+   The g:JavaImpPaths is a comma separated list of paths that point to the
+   roots of the 'com' or 'org' etc.  You can list your Java projects, external
+   projects or even Java's source classes.  It is recommended that you do this
+   so that you can take full advantage of automatic import statement
+   generation.
 
-    let g:JavaImpPaths = "/project/src/java,/project2/javasrc"
+   If ',' is not convenient for you, set g:JavaImpPathSep to the
+   (single-character) separator you would like to use:
 
-If there are too many paths, you can split them into separate lines:
+        let g:JavaImpPathSep = ':'
 
-    let g:JavaImpPaths = "/project/src/java," .
-       \ "/project2/javasrc," .
-       \ "/project3/javasrc"
+2. Path to JavaImp's temporary storage.  The default is:
 
-Note: Don't forget the ',' to separate the paths.
-
-If ',' is not convenient for you, set g:JavaImpPathSep to the
-(single-character) separator you would like to use:
-
-    let g:JavaImpPathSep = ':'
-
-   The g:JavaImpDataDir is a directory that you use to store JavaImp
-   settings and cache files. Default is:
-
-       let g:JavaImpDataDir = $HOME . "/vim/JavaImp"
+	    let g:JavaImpDataDir = $HOME . "/vim/JavaImp"
 
 Commands
 ========
