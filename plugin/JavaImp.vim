@@ -124,7 +124,7 @@ function! <SID>JavaImpGenerate()
         "echo "currPaths: ".currPaths
         let currPaths = strpart(currPaths, sepIdx + 1, strlen(currPaths) - sepIdx - 1)
         "echo "(".currPaths.")"
-        call <SID>JavaAppendClass(currPath, currPkg)
+        call <SID>JavaImpAppendClass(currPath, currPkg)
     endwhile
 
     "silent exe "write! /tmp/raw"
@@ -159,10 +159,10 @@ function! <SID>JavaImpGenerate()
 	silent exe "bwipeout! " impfile
     call delete(impfile)
     echo "Done.  Found " . classCount . " classes (". uniqueClassCount. " unique)"
-endfun
+endfunction
 
 " The helper function to append a class entry in the class list
-fun! <SID>JavaAppendClass(cpath, relativeTo)
+function! <SID>JavaImpAppendClass(cpath, relativeTo)
     " echo "Arguments " . a:cpath . " package is " . a:relativeTo
     if strlen(a:cpath) < 1 
         echo "Alert! Bug in JavaApppendClass (JavaImp.vim)"
@@ -251,7 +251,7 @@ fun! <SID>JavaAppendClass(cpath, relativeTo)
         "echo "  - jmplst: " . fnamemodify(a:cpath, ":t") . "\n"
         silent execute "read ".a:cpath
     endif
-endfun
+endfunction
 
 " Converts the current line in the buffer from a java|class file pathname 
 "  into a space delimited class package
@@ -262,7 +262,7 @@ endfun
 " If the current line does not appear to contain a java|class file, 
 " we blank it out (this is useful for non-bytecode entries in the 
 " jar files, like gif files or META-INF)
-fun! <SID>JavaImpFormatList() 
+function! <SID>JavaImpFormatList() 
     let l:currentLine = getline(".")
 
     " -- get the package name
@@ -293,7 +293,7 @@ fun! <SID>JavaImpFormatList()
         " blank out this line (sorting will pick this up later)
         call setline(".", "")
     endif
-endfun
+endfunction
 
 " -------------------------------------------------------------------  
 " Inserting imports 
@@ -313,7 +313,7 @@ endfun
 " (silence is interesting if you're scripting the use of JavaImpInsert...
 "  for example, i have a script that runs JavaImpInsert on all the 
 "  class not found errors)
-fun! <SID>JavaImpInsert(verboseMode)
+function! <SID>JavaImpInsert(verboseMode)
     if (<SID>JavaImpChkEnv() != 0)
         return
     endif
@@ -395,12 +395,12 @@ fun! <SID>JavaImpInsert(verboseMode)
 
         endif
     endif
-endfun
+endfunction
 
 " Given a classname, try to search the current file for the import statement.
 " If found, it'll return the fully qualify classname.  Otherwise, it'll return
 " an empty string.
-fun! <SID>JavaImpCurrFullName(className)
+function! <SID>JavaImpCurrFullName(className)
     let pattern = '^\s*import\s\s*.*[.]' . a:className . '\s*;'
     " Split and jump
     split
@@ -416,12 +416,12 @@ fun! <SID>JavaImpCurrFullName(className)
         close
         return ""
     endif
-endfun
+endfunction
 
 " Given a classname, try to search the current file for the import statement.
 " If found, it'll return the fully qualify classname.  If not found, it'll try
 " to search the import list for the match.
-fun! <SID>JavaImpFindFullName(className)
+function! <SID>JavaImpFindFullName(className)
     let fcn = <SID>JavaImpCurrFullName(a:className)
     if (fcn != "") 
         return fcn
@@ -460,7 +460,7 @@ fun! <SID>JavaImpFindFullName(className)
         let pickedImport = <SID>JavaImpChooseImport(importCtr, a:className, importLine)
         return pickedImport
     endif
-endfun
+endfunction
 
 " -------------------------------------------------------------------  
 " Choosing and caching imports 
@@ -479,7 +479,7 @@ endfun
 "
 " IMPORTANT: if the choice is not available in the cache, this returns
 " empty string, not the imports
-fun! <SID>JavaImpMakeChoice(imctr, className, imports)
+function! <SID>JavaImpMakeChoice(imctr, className, imports)
     let jicc = expand(g:JavaImpDataDir) . s:SL . "choices.txt"
     if !filereadable(jicc)
         return ""
@@ -495,10 +495,10 @@ fun! <SID>JavaImpMakeChoice(imctr, className, imports)
         close
         return ""
     endif
-endfun
+endfunction
 
 " Order the imports with the cacheLine and returns the list.
-fun! <SID>JavaImpOrderChoice(imctr, cacheLine, imports)
+function! <SID>JavaImpOrderChoice(imctr, cacheLine, imports)
     " we construct the imports so we can test for <space>classname<space>
     let il = " " . substitute(a:imports, "\n", " ", "g") . " "
     "echo "orig: " . a:imports
@@ -536,10 +536,10 @@ fun! <SID>JavaImpOrderChoice(imctr, cacheLine, imports)
     let rtn = substitute(rtn, " ", "\n", "g")
     "echo "return : " . rtn
     return rtn
-endfun
+endfunction
 
 " Save the import to the cache file.
-fun! <SID>JavaImpSaveChoice(className, imports, selected)
+function! <SID>JavaImpSaveChoice(className, imports, selected)
     let im = substitute(a:imports, "\n", " ", "g")
     " Note that we remove the selected first
     let spat = a:selected . " "
@@ -561,11 +561,11 @@ fun! <SID>JavaImpSaveChoice(className, imports, selected)
 
     silent update
     close
-endfun
+endfunction
 
 " Choose the import if there's multiple of them.  Returns the selected import
 " class.
-fun!<SID>JavaImpChooseImport(imctr, className, imports)
+function! <SID>JavaImpChooseImport(imctr, className, imports)
     let imps = <SID>JavaImpMakeChoice(a:imctr, a:className, a:imports)
     let uncached = (imps == "")
     if uncached
@@ -619,9 +619,9 @@ fun!<SID>JavaImpChooseImport(imctr, className, imports)
     " should not get here...
     echo "warning: should-not-get here reached in JavaImpMakeChoice"
     return 
-endfun
+endfunction
 
-fun! <SID>JavaImpDisplayChoices(imps, className)
+function! <SID>JavaImpDisplayChoices(imps, className)
     let imps = a:imps
     let simps = imps
     let ctr = 0
@@ -653,7 +653,7 @@ fun! <SID>JavaImpDisplayChoices(imps, className)
     endif
 
     return choice
-endfun
+endfunction
 
 " -------------------------------------------------------------------  
 " Sorting 
@@ -722,10 +722,10 @@ function! <SID>JavaImpSort()
     endif
 
 	close
-endfun
+endfunction
 
 " Remove empty lines in the range
-func! <SID>JavaImpRemoveEmpty(fromLine, toLine)
+function! <SID>JavaImpRemoveEmpty(fromLine, toLine)
     silent exe "" . a:fromLine . "," . a:toLine . ' g/^\s*$/d'
 endfunction
 
@@ -768,7 +768,7 @@ endfunction
 " ----
 " Depth should be >= 1, but don't set it too high, or else this function
 " will split everything up.  The recommended depth setting is "2"
-func! <SID>JavaImpAddPkgSep(fromLine, toLine, depth)
+function! <SID>JavaImpAddPkgSep(fromLine, toLine, depth)
     "echo "fromLine: " . a:fromLine . " toLine: " . a:toLine." depth:".a:depth
     if (a:depth <= 0) 
       return
@@ -803,7 +803,7 @@ endfunction
 " @param basePath - the base path to search for the class.
 " @param fullClassName - fully qualified class name
 " @param ext - extension to search for.
-function <SID>JavaImpGetFile(basePath, fullClassName, ext)
+function! <SID>JavaImpGetFile(basePath, fullClassName, ext)
     " Convert the '.' to '/'.
     let df = substitute(a:fullClassName, '\.', '/', "g")
 
@@ -819,12 +819,12 @@ function <SID>JavaImpGetFile(basePath, fullClassName, ext)
 endfunction
 
 " View the doc
-fun! <SID>JavaImpViewDoc(f)
+function! <SID>JavaImpViewDoc(f)
     let cmd = '!' . g:JavaImpDocViewer . ' "' . a:f . '"'
     silent execute cmd
     " We need to redraw after we quit, for things may not refresh correctly
     redraw!
-endfun
+endfunction
 
 " -------------------------------------------------------------------  
 " Java Source Viewing
@@ -882,7 +882,7 @@ endfunction
 " -------------------------------------------------------------------  
 " Java Doc Viewing
 " -------------------------------------------------------------------  
-fun! <SID>JavaImpDoc()
+function! <SID>JavaImpDoc()
     if (!exists("g:JavaImpDocPaths"))
         echo "Error: g:JavaImpDocPaths not set.  Please see the documentation for details."
         return
@@ -914,7 +914,7 @@ fun! <SID>JavaImpDoc()
     endwhile
     echo "JavaDoc not found in g:JavaImpDocPaths for class " . fullClassName
     return
-endfun
+endfunction
 
 " -------------------------------------------------------------------  
 " Quickfix 
@@ -986,7 +986,7 @@ endfunction
 " -------------------------------------------------------------------  
 
 " Go to the package declaration
-fun! <SID>JavaImpGotoPackage()
+function! <SID>JavaImpGotoPackage()
     " First search for the className in an import statement
     normal G$
     let flags = "w"
@@ -996,7 +996,7 @@ fun! <SID>JavaImpGotoPackage()
     else
         return 1
     endif
-endfun
+endfunction
 
 " Go to the last import statement that it can find.  Returns 1 if an import is
 " found, returns 0 if not.
@@ -1026,7 +1026,7 @@ endfunction
 
 " Removes all duplicate entries from a sorted buffer
 " preserves the order of the buffer and runs in o(n) time
-func! <SID>CheesyUniqueness() range
+function! <SID>CheesyUniqueness() range
     let l:storedStr = getline(1)
     let l:currentLine = 2 
     let l:lastLine = a:lastline
@@ -1047,7 +1047,7 @@ func! <SID>CheesyUniqueness() range
             "echo "set new stored Str to ".l:storedStr
         endif
     endwhile 
-endfunc
+endfunction
 
 " -------------------------------------------------------------------  
 " (Helpers) Making sure directory is set up 
@@ -1065,7 +1065,7 @@ function! <SID>JavaImpCfmMakeDir(dir)
             return 1
         endif
     endif
-endfunc
+endfunction
 
 function! <SID>JavaImpMakeDir(dir)
     if(has("unix"))
@@ -1080,11 +1080,11 @@ function! <SID>JavaImpMakeDir(dir)
     let rc = v:shell_error
     "echo "calling " . cmd
     return rc
-endfunc
+endfunction
 
 " Check and make sure the directories are set up correctly.  Otherwise, create
 " the dir or complain.
-fun! <SID>JavaImpChkEnv()
+function! <SID>JavaImpChkEnv()
     " Check if the g:JavaImpPaths is set:
     if (!exists("g:JavaImpPaths"))
         echo "You have not set the g:JavaImpPaths variable.  Pleae see documentation for details."
@@ -1103,7 +1103,7 @@ fun! <SID>JavaImpChkEnv()
     endif
     "echo "Created directory: " . g:JavaImpJarCache
     return 0
-endfunc
+endfunction
 
 " Returns the classname of an import statement
 " For the string "import foo.bar.Frobnicability;"
@@ -1111,7 +1111,7 @@ endfunc
 "
 " If not given an import statement, this returns
 " empty string
-fun! <SID>JavaImpGetClassname(importStr,depth) 
+function! <SID>JavaImpGetClassname(importStr,depth) 
     let pkgMatch = '\s*import\s*.*\.[^.]*;$'
     let pkgGrep = '\s*import\s*.*\.\([^.]*\);$'
     
@@ -1121,7 +1121,7 @@ fun! <SID>JavaImpGetClassname(importStr,depth)
         let classname = substitute(a:importStr, pkgGrep, '\1', "")
     endif
     return classname
-endfunc
+endfunction
 
 
 " Returns the (sub) package name of an import " statement.  
@@ -1131,7 +1131,7 @@ endfunc
 " If depth is 1, this returns "foo"
 " If depth is 2, this returns "foo.bar"
 " If depth >= 3, this returns "foo.bar.Frobnicability"
-fun! <SID>JavaImpGetSubPkg(importStr,depth) 
+function! <SID>JavaImpGetSubPkg(importStr,depth) 
     " set up the match/grep command 
     let subpkgStr = '[^.]\{-}\.'
     let pkgMatch = '\s*import\s*.*\.[^.]*;$'
@@ -1154,4 +1154,4 @@ fun! <SID>JavaImpGetSubPkg(importStr,depth)
 
     " echo a:depth.' gives us '.lastPkg
     return lastPkg
-endfunc
+endfunction
