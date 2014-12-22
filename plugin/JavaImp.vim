@@ -693,9 +693,19 @@ function! <SID>JavaImpSort()
 				call <SID>JavaImpGotoFirstMatchingImport("java", "b")
 				let lastImp = line(".")
 
-				" Place this range of lines before the first import.
+				" Place this range of lines before that first import.
 				execute firstImp . "," . lastImp . "delete"
-				call <SID>JavaImpGotoFirst()
+
+				" Find the Line which should contain the first import.
+				if (<SID>JavaImpGotoFirst() == 0)
+					if (<SID>JavaImpGotoPackage() == 0)
+						execute "normal! gg"
+					else
+						execute "normal! 2j"
+					endif
+				endif
+
+				" Place the java.* imports there.
 				normal P
 
 				" Update the Import Statement Range.

@@ -1,0 +1,159 @@
+Given (Some Java and Non-Java imports):
+  package com.bar.baz.home;
+  
+  import java.io.BufferedReader;
+  import com.bar.bang.baz;
+  import java.util.ArrayList;
+
+  class Foo {
+
+  }
+
+
+Execute (Sort them with newline at depth 0):
+  let g:JavaImpSortJavaFirst = 1
+  let g:JavaImpSortPkgSep = 0
+  JIS
+
+Expect (Sorted list of Java and Non-Java Imports):
+  package com.bar.baz.home;
+  
+  import java.io.BufferedReader;
+  import java.util.ArrayList;
+  import com.bar.bang.baz;
+
+  class Foo {
+
+  }
+
+Given (Some Java and Non-Java imports):
+  package com.bar.baz.home;
+  
+  import java.io.BufferedReader;
+  import com.bar.bang.baz;
+  import java.util.ArrayList;
+
+  class Foo {
+
+  }
+
+Execute (Sort them with newline at depth 1):
+  let g:JavaImpSortJavaFirst = 1
+  let g:JavaImpSortPkgSep = 1
+  JIS
+
+Expect (Sorted list of Java and Non-Java Imports):
+  package com.bar.baz.home;
+  
+  import java.io.BufferedReader;
+  import java.util.ArrayList;
+
+  import com.bar.bang.baz;
+
+  class Foo {
+
+  }
+
+Given (Some Java and Non-Java imports):
+  package com.bar.baz.home;
+  
+  import java.io.BufferedReader;
+  import com.bar.bang.baz;
+  import java.util.ArrayList;
+
+  class Foo {
+
+  }
+
+Execute (Sort them with newline at depth 2):
+  let g:JavaImpSortJavaFirst = 1
+  let g:JavaImpSortPkgSep = 2
+  JIS
+
+Expect (Sorted list of Java and Non-Java Imports):
+  package com.bar.baz.home;
+  
+  import java.io.BufferedReader;
+
+  import java.util.ArrayList;
+
+  import com.bar.bang.baz;
+
+  class Foo {
+
+  }
+
+Given (Only 1 Java Import):
+  package com.bar.baz.home;
+  
+  import java.io.BufferedReader;
+
+  class Foo {
+
+  }
+
+Execute (Sort them with newline at depth 1):
+  let g:JavaImpSortJavaFirst = 1
+  let g:JavaImpSortPkgSep = 1
+  JIS
+
+Expect (Sorted list of Java and Non-Java Imports):
+  package com.bar.baz.home;
+  
+  import java.io.BufferedReader;
+
+  class Foo {
+
+  }
+
+Given (More than 1 Java Import, but only Java Imports.):
+  package com.bar.baz.home;
+  
+  import java.util.ArrayList;
+  import java.io.BufferedReader;
+
+  class Foo {
+
+  }
+
+Execute (Sort them with newline at depth 1):
+  let g:JavaImpSortJavaFirst = 1
+  let g:JavaImpSortPkgSep = 1
+  JIS
+
+Expect (Sorted list of Java and Non-Java Imports):
+  package com.bar.baz.home;
+  
+  import java.io.BufferedReader;
+  import java.util.ArrayList;
+
+  class Foo {
+
+  }
+
+Given (No Java Imports):
+  package com.bar.baz.home;
+  
+  import com.bar.bangb.baz;
+  import com.bar.banga.baz;
+  import com.bar.bangc.baz;
+
+  class Foo {
+
+  }
+
+Execute (Sort them with newline at depth 1):
+  let g:JavaImpSortJavaFirst = 1
+  let g:JavaImpSortPkgSep = 1
+  JIS
+
+Expect (Sorted list of Non-Java Imports):
+  package com.bar.baz.home;
+  
+  import com.bar.banga.baz;
+  import com.bar.bangb.baz;
+  import com.bar.bangc.baz;
+
+  class Foo {
+
+  }
