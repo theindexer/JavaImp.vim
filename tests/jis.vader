@@ -157,3 +157,26 @@ Expect (Sorted list of Non-Java Imports):
   class Foo {
 
   }
+
+Given (No package statement.):
+  import com.bar.bangb.baz;
+  import com.bar.banga.baz;
+  import com.bar.bangc.baz;
+
+  class Foo {
+
+  }
+
+Execute (Sort them with newline at depth 1):
+  let g:JavaImpSortJavaFirst = 1
+  let g:JavaImpSortPkgSep = 1
+  JIS
+
+Expect (Sorted list of Non-Java Imports, and still no package statement.):
+  import com.bar.banga.baz;
+  import com.bar.bangb.baz;
+  import com.bar.bangc.baz;
+
+  class Foo {
+
+  }
