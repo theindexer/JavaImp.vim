@@ -3,6 +3,7 @@
 " -------------------------------------------------------------------  
 
 command! -nargs=? JIX              call <SID>JavaImpQuickFix()
+command! -nargs=? JIX2             call <SID>JavaImpQuickFix2()
 command! -nargs=? JI               call <SID>JavaImpInsert(1, expand("<cword>"))
 command! -nargs=? JavaImp          call <SID>JavaImpInsert(1, expand("<cword>"))
 command! -nargs=? JavaImpSilent    call <SID>JavaImpInsert(0, expand("<cword>"))
@@ -74,6 +75,9 @@ endif
 if !exists("g:JavaImpDocViewer")
     let g:JavaImpDocViewer = "w3m"
 endif
+
+" Determine JavaImp's Installation Directory.
+let s:pluginHome = expand("<sfile>:p:h:h")
 
 " -------------------------------------------------------------------  
 " Generating the imports table
@@ -327,7 +331,7 @@ function! <SID>JavaImpInsert(verboseMode, className)
     " Write the current buffer first (if we have to).  Note that we only want
     " to do this if the current buffer is named.
     if expand("%") != '' 
-        exec verbosity "update"
+        "exec verbosity "update"
     endif
 
     " choose the current word for the class
@@ -926,6 +930,11 @@ endfunction
 "
 " Requires that 'javac' is in the $PATH.
 function! <SID>JavaImpQuickFix()
+	" Temporarily disable autocommands so that JavaImpInsert can be called
+	" repeatedly without triggering various autocommands from other plugins.
+	let l:oldEventIgnore = &eventignore
+	set eventignore=all
+
 	if (<SID>JavaImpChkEnv() != 0)
 		return
 	endif
@@ -933,7 +942,7 @@ function! <SID>JavaImpQuickFix()
 	" Set makeprg to use javac.
 	" Preserve the old makeprg setting.
 	let l:oldMakePrg = &makeprg
-	set makeprg=javac\ %
+	set makeprg=javac\ %\ -cp\ &g:JavaImpPaths
 
 	" Set the error format to handle javac's error output.
 	" Preserve the old error format.
@@ -977,6 +986,9 @@ function! <SID>JavaImpQuickFix()
 	" Restore old efm and makeprg
 	let &makeprg = l:oldMakePrg
 	let &errorformat = l:oldErrorFormat
+
+	" Restore the old eventignore settings.
+	let &eventignore = l:oldEventIgnore
 endfunction
 
 " -------------------------------------------------------------------  
@@ -1156,4 +1168,13 @@ function! <SID>JavaImpGetSubPkg(importStr,depth)
 
     " echo a:depth.' gives us '.lastPkg
     return lastPkg
+endfunction
+
+function! <SID>JavaImpQuickFix2()
+	" Source the Parser and Parse Tree Walker to find all referenced classes.
+	execute "pyfile " . s:pluginHome . "/pythonx/findreftypes.py"
+
+	" TODO: Only sort imports if import statements were added.
+	" Sort the Imports.
+	call <SID>JavaImpSort()
 endfunction
