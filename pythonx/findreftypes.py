@@ -1,10 +1,7 @@
+import os
 import vim
 import plyj.parser
 import plyj.model as m
-
-p = plyj.parser.Parser()
-filepath = vim.eval("expand(\"%\")")
-tree = p.parse_file(filepath)
 
 # Set of All Referenced Types.  These are the types for which import statements
 # should be generated.
@@ -27,25 +24,31 @@ class TypeVisitor(m.Visitor):
             typName = typ.name.value
             allReferencedTypes.add(typName)
 
+# Swich to JavaImp's Data Directory so we can dump ply's debugging data.
+oldDir = os.getcwd()
+javaImpDataDir = vim.eval("g:JavaImpDataDir")
+os.chdir(javaImpDataDir)
+
+# Parse the File in the Current Buffer.
+p = plyj.parser.Parser()
+filepath = vim.eval("expand(\"%:p\")")
+tree = p.parse_file(filepath)
+
 # Visit all Types
 tree.accept(TypeVisitor())
 
-# Debugging Code
-#print
-#print
-#print "All Referenced Types:"
-#for typ in allReferencedTypes:
-#    print typ
+# Switch Back to the Previous Directory.
+os.chdir(oldDir)
 
 # TODO:
 #
-# 1. Find Method Target Types. (i.e. Naming.lookup(); 'Naming' is a reference type)
-# 2. Find Object Castings. (i.e. MyBarType mbt = (MyBarType) foo;)
-# 3. Find Enum Constant Types.  (i.e. Planets.MERCURY)
-# 4. Don't include Inner Classes (i.e. no imports required).
-# 5. Don't include built in types. (String, Integer, Object, etc)
-# 6. Optimize JavaImpInsert so that it can accept a list.
-# 7. Control output of plyj temporary files.
+#      1. Find Method Target Types. (i.e. Naming.lookup(); 'Naming' is a reference type)
+#      2. Find Object Castings. (i.e. MyBarType mbt = (MyBarType) foo;)
+#      3. Find Enum Constant Types.  (i.e. Planets.MERCURY)
+#      4. Don't include Inner Classes (i.e. no imports required).
+#      5. Don't include built in types. (String, Integer, Object, etc)
+#      6. Optimize JavaImpInsert so that it can accept a list.
+# DONE 7. Control output of plyj temporary files.
 
 for typ in allReferencedTypes:
     vim.command("call <SID>JavaImpInsert(1, \"" + typ + "\")")
