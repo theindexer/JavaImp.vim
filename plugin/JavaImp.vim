@@ -318,7 +318,13 @@ endfunction
 "  for example, i have a script that runs JavaImpInsert on all the 
 "  class not found errors)
 function! <SID>JavaImpInsert(verboseMode, className)
-    if (<SID>JavaImpChkEnv() != 0)
+	" Retain the old event ignore settings and ignore all events.  This will
+	" prevent other extensions (like vim-signify) from calling update every
+	" time we split window.
+	let oldEventIgnore = &eventignore
+	set eventignore=all
+
+	if (<SID>JavaImpChkEnv() != 0)
         return
     endif
 
@@ -327,12 +333,6 @@ function! <SID>JavaImpInsert(verboseMode, className)
     else
         let verbosity = "silent"
     end
-
-    " Write the current buffer first (if we have to).  Note that we only want
-    " to do this if the current buffer is named.
-    if expand("%") != '' 
-        "exec verbosity "update"
-    endif
 
     " choose the current word for the class
     let fullClassName = <SID>JavaImpCurrFullName(a:className)
@@ -347,6 +347,9 @@ function! <SID>JavaImpInsert(verboseMode, className)
             if ! a:verboseMode
                 echo a:className." not found (you should update the class map file)"
             else
+				" TODO: No feedback on whether a match was found after
+				" generating.  Either way, would be better if JavaImpInsert()
+				" continued upon completion of JavaImpGenerate().
                 echo "Can not find any class that matches " . a:className . "."
                 let input = confirm("Do you want to update the class map file?", "&Yes\n&No", 2)
                 if (input == 1)
@@ -399,6 +402,9 @@ function! <SID>JavaImpInsert(verboseMode, className)
 
         endif
     endif
+
+	" Restore the old Event Ignore Settings.
+	let &eventignore=oldEventIgnore
 endfunction
 
 " Given a classname, try to search the current file for the import statement.
