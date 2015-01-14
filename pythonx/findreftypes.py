@@ -43,12 +43,13 @@ os.chdir(oldDir)
 # TODO:
 #
 #      1. Find Method Target Types. (i.e. Naming.lookup(); 'Naming' is a reference type)
-#      2. Find Object Castings. (i.e. MyBarType mbt = (MyBarType) foo;)
+# DONE 2. Find Object Castings. (i.e. MyBarType mbt = (MyBarType) foo;) Done by TypeVisitor automatically.
 #      3. Find Enum Constant Types.  (i.e. Planets.MERCURY)
-#      4. Don't include Inner Classes (i.e. no imports required).
-# DONE 5. Don't include built in types. (String, Integer, Object, etc)
-# DONE 6. Optimize JavaImpInsert so that it can be run multiple times quickly.
-# DONE 7. Control output of plyj temporary files.
+#      4. Other class constants.  (i.e. MyClass.CONSTANT_VALUE)
+#      5. Don't include Inner Classes (i.e. no imports required).
+# DONE 6. Don't include built in types. (String, Integer, Object, etc)
+# DONE 7. Optimize JavaImpInsert so that it can be run multiple times quickly.
+# DONE 8. Control output of plyj temporary files.
 
 for typ in allReferencedTypes:
     vim.command("call <SID>JavaImpInsert(0, \"" + typ + "\")")
