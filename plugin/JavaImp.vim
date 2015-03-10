@@ -43,10 +43,17 @@ if !exists("g:JavaImpClassList")
     let g:JavaImpClassList = g:JavaImpDataDir . s:SL . "JavaImp.txt"
 endif
 
-" Sort the import with preferences to the java.* classes
-" TODO: Will be replaced with different functionality soon.
-if !exists("g:JavaImpSortJavaFirst")
-    let g:JavaImpSortJavaFirst = 1
+" Order import statements which match these regular expressions in the order
+" of the expression.  The default setting sorts import statements with java.*
+" first, then javax.*, then org.*, then com.*, and finally everything else
+" alphabetically after that.  These settings emulate Eclipse's settings.
+if !exists("g:JavaImpTopImports")
+	let g:JavaImpTopImports = [
+		\ 'java.*',
+		\ 'javax.*',
+		\ 'org.*',
+		\ 'com.*'
+		\ ]
 endif
 
 " Deprecated
@@ -679,18 +686,20 @@ function! <SID>JavaImpSort()
 		" Sort the Import Statements using Vim's Builtin 'sort' Function.
 		execute firstImp . "," . lastImp . "sort"
 
-		" Special Handling to put java.* imports first.
-		" TODO: Improve by allowing other root packages to be prioritized
-		" first as well.  For example: 1st java.*, 2nd javax.*, 3rd org.*, 4th
-		" everything else in sorted order.
-		if (g:JavaImpSortJavaFirst == 1)
-			" Find the First java.* Import and 
-			let l:javaImportFound = <SID>JavaImpGotoFirstMatchingImport("java", "w")
-			if (l:javaImportFound)
+		" Reverse the Top Import List so that our insertion loop below works
+		" correctly.
+		let l:reversedTopImports = g:JavaImpTopImports
+		call reverse(l:reversedTopImports)
+
+		" Insert each matching Top Import in Reverse Order.
+		for l:pattern in g:JavaImpTopImports
+			" Find the First Import Matching this Pattern.
+			let l:patternFound = <SID>JavaImpGotoFirstMatchingImport(l:pattern, "w")
+			if (l:patternFound)
 				let firstImp = line(".")
 
 				" Find the Last java.* Import.
-				call <SID>JavaImpGotoFirstMatchingImport("java", "b")
+				call <SID>JavaImpGotoFirstMatchingImport(l:pattern, "b")
 				let lastImp = line(".")
 
 				" Place this range of lines before that first import.
@@ -701,12 +710,12 @@ function! <SID>JavaImpSort()
 					if (<SID>JavaImpGotoPackage() == 0)
 						execute "normal! gg"
 					else
-						execute "normal! 2j"
+						execute "normal! j"
 					endif
 				endif
 
-				" Place the java.* imports there.
-				normal P
+				" Place the matching imports there.
+				normal p
 
 				" Update the Import Statement Range.
 				call <SID>JavaImpGotoFirst()
@@ -714,7 +723,8 @@ function! <SID>JavaImpSort()
 				call <SID>JavaImpGotoLast()
 				let lastImp = line(".")
 			endif
-		endif
+
+		endfor
 
         if (g:JavaImpSortPkgSep > 0)
             call <SID>JavaImpAddPkgSep(firstImp, lastImp, g:JavaImpSortPkgSep)
