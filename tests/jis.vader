@@ -11,7 +11,7 @@ Given (Some Java and Non-Java imports):
 
 
 Execute (Sort them with newline at depth 0):
-  let g:JavaImpSortJavaFirst = 1
+  let g:JavaImpTopImports = ['java\..*', 'javax\..*', 'org\..*', 'com\..*']
   let g:JavaImpSortPkgSep = 0
   JIS
 
@@ -38,7 +38,6 @@ Given (Some Java and Non-Java imports):
   }
 
 Execute (Sort them with newline at depth 1):
-  let g:JavaImpSortJavaFirst = 1
   let g:JavaImpSortPkgSep = 1
   JIS
 
@@ -66,7 +65,6 @@ Given (Some Java and Non-Java imports):
   }
 
 Execute (Sort them with newline at depth 2):
-  let g:JavaImpSortJavaFirst = 1
   let g:JavaImpSortPkgSep = 2
   JIS
 
@@ -93,7 +91,6 @@ Given (Only 1 Java Import):
   }
 
 Execute (Sort them with newline at depth 1):
-  let g:JavaImpSortJavaFirst = 1
   let g:JavaImpSortPkgSep = 1
   JIS
 
@@ -117,7 +114,6 @@ Given (More than 1 Java Import, but only Java Imports.):
   }
 
 Execute (Sort them with newline at depth 1):
-  let g:JavaImpSortJavaFirst = 1
   let g:JavaImpSortPkgSep = 1
   JIS
 
@@ -143,7 +139,6 @@ Given (No Java Imports):
   }
 
 Execute (Sort them with newline at depth 1):
-  let g:JavaImpSortJavaFirst = 1
   let g:JavaImpSortPkgSep = 1
   JIS
 
@@ -168,7 +163,6 @@ Given (No package statement.):
   }
 
 Execute (Sort them with newline at depth 1):
-  let g:JavaImpSortJavaFirst = 1
   let g:JavaImpSortPkgSep = 1
   JIS
 
@@ -176,6 +170,129 @@ Expect (Sorted list of Non-Java Imports, and still no package statement.):
   import com.bar.banga.baz;
   import com.bar.bangb.baz;
   import com.bar.bangc.baz;
+
+  class Foo {
+
+  }
+
+Given (Empty Top Imports List):
+  import java.bar;
+  import javax.bar;
+  import org.bar;
+  import com.bar;
+
+  class Foo {
+
+  }
+
+Execute (Sort them with newline at depth 0 and with no Top Packages):
+  let g:JavaImpSortPkgSep = 0
+  let g:JavaImpTopImports = []
+  JIS
+
+Expect (Alphabetically Sorted list of Imports, and still no package statement.):
+  import com.bar;
+  import java.bar;
+  import javax.bar;
+  import org.bar;
+
+  class Foo {
+
+  }
+
+Given (Custom Top Imports List):
+  import java.bar;
+  import javax.bar;
+  import org.bar;
+  import com.bar;
+
+  class Foo {
+
+  }
+
+Execute (Sort the imports with the custom list.):
+  let g:JavaImpTopImports = ['org\..*', 'java\..*', 'javax\..*', 'com\..*']
+  let g:JavaImpSortPkgSep = 0
+  JIS
+
+Expect (Alphabetically Sorted list of Imports, and still no package statement.):
+  import org.bar;
+  import java.bar;
+  import javax.bar;
+  import com.bar;
+
+  class Foo {
+
+  }
+
+Given (Static Imports At Top):
+  import static a;
+  import static b;
+  import static c;
+  import java.bar;
+
+  class Foo {
+
+  }
+
+Execute (Sort Static Imports to the Top.):
+  let g:JavaImpSortPkgSep = 0
+  let g:JavaImpStaticImportsFirst = 1
+  JIS
+
+Expect (Static Imports Still At Top.):
+  import static a;
+  import static b;
+  import static c;
+  import java.bar;
+
+  class Foo {
+
+  }
+
+Given (Static Imports At Top):
+  import static a;
+  import static b;
+  import static c;
+  import java.bar;
+
+  class Foo {
+
+  }
+
+Execute (Sort Static Imports to the Bottom.):
+  let g:JavaImpSortPkgSep = 0
+  let g:JavaImpStaticImportsFirst = 0
+  JIS
+
+Expect (Static Imports At Bottom.):
+  import java.bar;
+  import static a;
+  import static b;
+  import static c;
+
+  class Foo {
+
+  }
+
+Given (Only Static Imports.):
+  import static a;
+  import static b;
+  import static c;
+
+  class Foo {
+
+  }
+
+Execute (Sort Static Imports to the Bottom.):
+  let g:JavaImpSortPkgSep = 0
+  let g:JavaImpStaticImportsFirst = 0
+  JIS
+
+Expect (Static Imports At Bottom and still above class content.):
+  import static a;
+  import static b;
+  import static c;
 
   class Foo {
 

@@ -49,12 +49,19 @@ endif
 " alphabetically after that.  These settings emulate Eclipse's settings.
 if !exists("g:JavaImpTopImports")
 	let g:JavaImpTopImports = [
-		\ 'java.*',
-		\ 'javax.*',
-		\ 'org.*',
-		\ 'com.*'
+		\ 'java\..*',
+		\ 'javax\..*',
+		\ 'org\..*',
+		\ 'com\..*'
 		\ ]
 endif
+
+" Put the Static Imports First if 1, otherwise put the Static Imports last.
+" Defaults to 1.
+if !exists("g:JavaImpStaticImportsFirst")
+	let g:JavaImpStaticImportsFirst = 1
+endif
+
 
 " Deprecated
 if !exists("g:JavaImpJarCache")
@@ -688,50 +695,88 @@ function! <SID>JavaImpSort()
 
 		" Reverse the Top Import List so that our insertion loop below works
 		" correctly.
-		let l:reversedTopImports = g:JavaImpTopImports
-		call reverse(l:reversedTopImports)
+		let l:reversedTopImports = reverse(copy(g:JavaImpTopImports))
 
 		" Insert each matching Top Import in Reverse Order.
-		for l:pattern in g:JavaImpTopImports
+		for l:pattern in l:reversedTopImports
 			" Find the First Import Matching this Pattern.
 			let l:patternFound = <SID>JavaImpGotoFirstMatchingImport(l:pattern, "w")
 			if (l:patternFound)
 				let firstImp = line(".")
 
-				" Find the Last java.* Import.
+				" Find the Last Matching Import.
 				call <SID>JavaImpGotoFirstMatchingImport(l:pattern, "b")
 				let lastImp = line(".")
 
 				" Place this range of lines before that first import.
 				execute firstImp . "," . lastImp . "delete"
 
-				" Find the Line which should contain the first import.
-				if (<SID>JavaImpGotoFirst() == 0)
-					if (<SID>JavaImpGotoPackage() == 0)
-						execute "normal! gg"
-					else
-						execute "normal! j"
-					endif
+				" Find the Line which should contain the first import and
+				" place it.
+				if (<SID>JavaImpGotoPackage() == 0)
+					normal! ggP
+				else
+					normal! jp
 				endif
 
 				" Place the matching imports there.
-				normal p
-
-				" Update the Import Statement Range.
-				call <SID>JavaImpGotoFirst()
-				let firstImp = line(".")
-				call <SID>JavaImpGotoLast()
-				let lastImp = line(".")
 			endif
-
 		endfor
 
+		call <SID>JavaImpPlaceSortedStaticImports()
+
         if (g:JavaImpSortPkgSep > 0)
+			" Update the Import Statement Range.
+			call <SID>JavaImpGotoFirst()
+			let firstImp = line(".")
+			call <SID>JavaImpGotoLast()
+			let lastImp = line(".")
+
             call <SID>JavaImpAddPkgSep(firstImp, lastImp, g:JavaImpSortPkgSep)
         endif
     endif
 
 	close
+endfunction
+
+" Place Sorted Static Imports either before or after the normal imports
+" depending on g:JavaImpStaticImportsFirst.
+function! <SID>JavaImpPlaceSortedStaticImports()
+	" Find the Range of Static Imports
+	if (<SID>JavaImpFindFirstStaticImport() > 0)
+		let firstStaticImp = line(".")
+		call <SID>JavaImpFindLastStaticImport()
+		let lastStaticImp = line(".")
+
+		" Remove the block of Static Imports.
+		execute firstStaticImp . "," . lastStaticImp . "delete"
+
+		" Place the cursor before the Normal Imports.
+		if g:JavaImpStaticImportsFirst == 1
+			" Find the Line which should contain the first import.
+			if (<SID>JavaImpGotoPackage() == 0)
+				normal! ggP
+			else
+				normal! jp
+			endif
+
+
+		" Otherwise, place the cursor after the Normal Imports.
+		else
+			" Paste in the Static Imports after the last import or at the top
+			" of the file if no other imports.
+			if (<SID>JavaImpGotoLast() <= 0)
+				if (<SID>JavaImpGotoPackage() == 0)
+					normal! ggP
+				else
+					normal! jp
+				endif
+			else
+				normal! p
+			endif
+		endif
+
+	endif
 endfunction
 
 " Remove empty lines in the range
@@ -1020,11 +1065,23 @@ function! <SID>JavaImpGotoFirst()
 	return <SID>JavaImpGotoFirstMatchingImport('', 'w')
 endfunction
 
+" Go to the last static import statement that it can find.  Returns 1 if an
+" import is found, returns 0 if not.
+function! <SID>JavaImpFindLastStaticImport()
+	return <SID>JavaImpGotoFirstMatchingImport('static\s\s*', 'b')
+endfunction
+"
+" Go to the first static import statement that it can find.  Returns 1 if an
+" import is found, returns 0 if not.
+function! <SID>JavaImpFindFirstStaticImport()
+	return <SID>JavaImpGotoFirstMatchingImport('static\s\s*', 'w')
+endfunction
+
 function! <SID>JavaImpGotoFirstMatchingImport(pattern, flags)
 	normal G$
 	let pattern = '^\s*import\s\s*'
 	if (a:pattern != "")
-		let pattern = l:pattern . a:pattern . '\.'
+		let pattern = l:pattern . a:pattern
 	endif
 	let pattern = l:pattern . '.*;'
     return (search(l:pattern, a:flags) > 0)
