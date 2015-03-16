@@ -123,18 +123,30 @@ java.vim  filetype plugin to get a similar man page behavior by press "K":
 
     nmap <buffer> K :JID<CR>
 
-Other Settings
+Settings
 --------------
-You can make the following settings in your .vimrc file:
+You can make the following settings in your Vim config files:
 
-The sorting algorithm gives preferences to the java.* classes.  You can turn
-this behavior off by putting this in your .vimrc file.
+JavaImp will prioritize imports part of java.\*, javax.\*, org.\*, and com.\*
+first (in that order).  This is a reasonable default which matches Eclipse's
+settings.
 
-    let g:JavaImpSortJavaFirst = 0
+You can override this configuration by setting g:JavaImpTopImports:
 
-By default, the sort algorithm will insert a blank line among package
-group with package root for 2 similar levels.  For example, the import of
-the following:
+	let g:JavaImpTopImports = [
+		\ 'java\..*',
+		\ 'javax\..*',
+		\ 'org\..*',
+		\ 'com\..*'
+		\ ]
+
+Additionally, you can control the location of the static imports.  The default
+is to place them above the regular imports.  You can override this setting:
+
+	let g:JavaImpStaticImportsFirst = 1
+
+By default, JavaImp will insert a blank line among package group with package
+root for 2 similar levels.  For example, the import of the following:
 
     import java.util.List;
     import org.apache.tools.zip.ZipEntry;
