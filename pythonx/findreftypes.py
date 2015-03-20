@@ -47,9 +47,9 @@ os.chdir(oldDir)
 #      3. Find Enum Constant Types.  (i.e. Planets.MERCURY)
 #      4. Don't include Inner Classes (i.e. no imports required).
 #      5. Don't include built in types. (String, Integer, Object, etc)
-# DONE 6. Optimize JavaImpInsert so that it can be run multiple times quickly.
+#      6. Optimize JavaImpInsert so that it can accept a list.
 # DONE 7. Control output of plyj temporary files.
 
 for typ in allReferencedTypes:
-    vim.command("call <SID>JavaImpInsert(0, \"" + typ + "\")")
+    vim.command("call <SID>JavaImpInsert(1, \"" + typ + "\")")
     #print "call <SID>JavaImpInsert(1, \"" + typ + "\")"
