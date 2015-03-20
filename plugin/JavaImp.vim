@@ -3,9 +3,9 @@
 " -------------------------------------------------------------------  
 
 command! -nargs=? JIX              call <SID>JavaImpQuickFix()
-command! -nargs=? JI               call <SID>JavaImpInsert(1, expand("<cword>"))
-command! -nargs=? JavaImp          call <SID>JavaImpInsert(1, expand("<cword>"))
-command! -nargs=? JavaImpSilent    call <SID>JavaImpInsert(0, expand("<cword>"))
+command! -nargs=? JI               call <SID>JavaImpInsert(1)
+command! -nargs=? JavaImp          call <SID>JavaImpInsert(1)
+command! -nargs=? JavaImpSilent    call <SID>JavaImpInsert(0)
 
 command! -nargs=? JIG              call <SID>JavaImpGenerate()
 command! -nargs=? JavaImpGenerate  call <SID>JavaImpGenerate()
@@ -313,11 +313,10 @@ endfunction
 " (silence is interesting if you're scripting the use of JavaImpInsert...
 "  for example, i have a script that runs JavaImpInsert on all the 
 "  class not found errors)
-function! <SID>JavaImpInsert(verboseMode, className)
+function! <SID>JavaImpInsert(verboseMode)
     if (<SID>JavaImpChkEnv() != 0)
         return
     endif
-
     if a:verboseMode
         let verbosity = ""
     else
@@ -331,19 +330,20 @@ function! <SID>JavaImpInsert(verboseMode, className)
     endif
 
     " choose the current word for the class
-    let fullClassName = <SID>JavaImpCurrFullName(a:className)
+    let className = expand("<cword>")
+    let fullClassName = <SID>JavaImpCurrFullName(className)
 
     if (fullClassName != "")
         if verbosity != "silent"
-            echo "Import for " . a:className . " found in this file."
+            echo "Import for " . className . " found in this file."
         endif
     else 
-        let fullClassName = <SID>JavaImpFindFullName(a:className)
+        let fullClassName = <SID>JavaImpFindFullName(className)
         if (fullClassName == "")
             if ! a:verboseMode
-                echo a:className." not found (you should update the class map file)"
+                echo className." not found (you should update the class map file)"
             else
-                echo "Can not find any class that matches " . a:className . "."
+                echo "Can not find any class that matches " . className . "."
                 let input = confirm("Do you want to update the class map file?", "&Yes\n&No", 2)
                 if (input == 1)
                     call <SID>JavaImpGenerate()
@@ -366,7 +366,7 @@ function! <SID>JavaImpInsert(verboseMode, className)
 
                 " Check to see if the class is in this package, we won't
                 " need an import.
-                if (fullClassName == (pkg . '.' . a:className))
+                if (fullClassName == (pkg . '.' . className))
                     let importLoc = -1
                 else
                     if (hasImport == 0)
@@ -384,7 +384,7 @@ function! <SID>JavaImpInsert(verboseMode, className)
 
             if a:verboseMode
                 if (importLoc >= 0)
-                    echo "Inserted " . fullClassName . " for " . a:className 
+                    echo "Inserted " . fullClassName . " for " . className 
                 else
                     echo "Import unneeded (same package): " . fullClassName
                 endif
@@ -920,63 +920,61 @@ endfunction
 " Quickfix 
 " -------------------------------------------------------------------  
 
-" Use 'javac', the Java Compiler, to attempt to build the current file.  If
-" there are class symbols which cannot be found, insert an import statement
-" for each one.
+" Taken from Eric Kow's dev script...
 "
-" Requires that 'javac' is in the $PATH.
+" This function will try to open your error window, given that you have run Ant
+" and the quickfix windows contains unresolved symbol error, will fix all of
+" them for you automatically!
 function! <SID>JavaImpQuickFix()
-	if (<SID>JavaImpChkEnv() != 0)
-		return
-	endif
+    if (<SID>JavaImpChkEnv() != 0)
+        return
+    endif
+    " FIXME... we should figure out if there are no errors and
+    " quit gracefully, rather than let vim do its error thing and
+    " figure out where to stop
+    crewind
+    cn
+    cn 
+    copen
+    let l:nextStr = getline(".")
+    echo l:nextStr
+    let l:currentStr = ''
 
-	" Set makeprg to use javac.
-	" Preserve the old makeprg setting.
-	let l:oldMakePrg = &makeprg
-	set makeprg=javac\ %
+    crewind
+    " we use the cn command to advance down the quickfix list until
+    " we've hit the last error 
+    while match(l:nextStr,'|[0-9]\+ col [0-9]\+|') > -1 
+        " jump to the quickfix error window
+        cnext
+        copen
+        let l:currentLine = line(".")
+        let l:currentStr=getline(l:currentLine)
+        let l:nextStr=getline(l:currentLine + 1)
+        
+        if (match(l:currentStr, 'cannot resolve symbol$') > -1 ||
+                    \ match(l:currentStr, 'Class .* not found.$') > -1 ||
+                    \ match(l:currentStr, 'Undefined variable or class name: ') > -1)
 
-	" Set the error format to handle javac's error output.
-	" Preserve the old error format.
-	let l:oldErrorFormat = &errorformat
-	"set errorformat=%A%f:%l:\ %m,%C%m
-	set errorformat=%A%f:%l:\ %m,%-C%p^,%+C%m,%-G%.%#
+            " get the filename (we don't use this for the sort, 
+            " but later on when we want to sort a file's after
+            " imports after inserting all the ones we know of
+            let l:nextFilename = substitute(l:nextStr,  '|.*$','','g')
+            let l:oldFilename = substitute(l:currentStr,'|.*$','','g')
+            
+            " jump to where the error occurred, and fix it
+            cc
+            call <SID>JavaImpInsert(0)
 
-	" Attempt to compile the current file with javac.
-	silent make
+            " since we're still in the buffer, if the next line looks
+            " like a different file (or maybe the end-of-errors), sort
+            " this file's import statements
+            if l:nextFilename != l:oldFilename 
+                call <SID>JavaImpSort()
+            endif
+        endif
 
-	" TODO: cleanup compile class file if made.
-
-	" Get the QuickFix List.
-	let l:qfResultList = getqflist()
-
-	" Filter Out all error except the ones concerning missing symbols.
-	call filter(l:qfResultList, 'v:val.text =~ "cannot find symbol"')
-	call filter(l:qfResultList, 'v:val.text =~ "symbol:\\s\\+class"')
-	let l:classNames = []
-
-	" Pick out the missing class names in each error message.
-	for qfitem in l:qfResultList
-		call cursor(qfitem.lnum, qfitem.col)
-		let l:className = expand("<cword>")
-		if (index(l:classNames, l:className) == -1)
-			let l:classNames = add(l:classNames, l:className)
-		endif
-	endfor
-
-	" Insert Each Class.
-	for l:className in l:classNames
-		call <SID>JavaImpInsert(0, l:className)
-		redraw!
-	endfor
-
-	" Sort the Import List. (only if there were classes inserted)
-	if (len(l:classNames) > 0)
-		call <SID>JavaImpSort()
-	endif
-
-	" Restore old efm and makeprg
-	let &makeprg = l:oldMakePrg
-	let &errorformat = l:oldErrorFormat
+        " this is where the loop checking happens
+    endwhile
 endfunction
 
 " -------------------------------------------------------------------  
