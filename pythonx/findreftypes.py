@@ -46,7 +46,7 @@ os.chdir(oldDir)
 #      2. Find Object Castings. (i.e. MyBarType mbt = (MyBarType) foo;)
 #      3. Find Enum Constant Types.  (i.e. Planets.MERCURY)
 #      4. Don't include Inner Classes (i.e. no imports required).
-# DONE 5. Don't include built in types. (String, Integer, Object, etc)
+#      5. Don't include built in types. (String, Integer, Object, etc)
 # DONE 6. Optimize JavaImpInsert so that it can be run multiple times quickly.
 # DONE 7. Control output of plyj temporary files.
 

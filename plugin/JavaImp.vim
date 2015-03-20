@@ -375,25 +375,14 @@ function! <SID>JavaImpInsert(verboseMode, className)
                 " need an import.
                 if (fullClassName == (pkg . '.' . a:className))
                     let importLoc = -1
-
                 else
-					" Check if the fully qualified classname is part of
-					" java.lang (making it an automatic import).  If so,
-					" there's no need to insert an import statement for it.
-					let l:autoImportPat = 'java\.lang\..*'
-					if (match(fullClassName, autoImportPat) != -1)
-						let importLoc = -1
-
-					" Add an extra blank line after the package before the
-					" import.
-					elseif (hasImport == 0)
+                    if (hasImport == 0)
+                        " Add an extra blank line after the package before
+                        " the import
                         exec verbosity 'call append(pkgLoc, "")'
                         let importLoc = pkgLoc + 1
                     endif
                 endif
-
-			" There are not yet any imports.  So the first line is where this
-			" import should be inserted.
             elseif (hasImport == 0)
                 let importLoc = 0
             endif
@@ -404,7 +393,7 @@ function! <SID>JavaImpInsert(verboseMode, className)
                 if (importLoc >= 0)
                     echo "Inserted " . fullClassName . " for " . a:className 
                 else
-                    echo "Import unneeded: " . fullClassName
+                    echo "Import unneeded (same package): " . fullClassName
                 endif
             endif 
 
