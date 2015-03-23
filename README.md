@@ -174,6 +174,9 @@ not want to insert blank lines among the imports, set:
 
     let g:JavaImpSortPkgSep = 0
 
+Please note that this setting only applies to non-static imports.  Static
+Imports will not have a package separator of any kind.
+
 Extras
 ------
 After you have generated the JavaImp.txt file by using :JIG, you can use it as

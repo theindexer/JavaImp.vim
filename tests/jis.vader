@@ -297,3 +297,67 @@ Expect (Static Imports At Bottom and still above class content.):
   class Foo {
 
   }
+
+Given (Normal and Static Imports.):
+  import java.foo.bar;
+  import static a;
+  import android.foo.bar;
+  import static b;
+  import com.foo.bar;
+  import static c;
+
+  class Foo {
+
+  }
+
+Execute (Sort Static Imports to the Top with a Package Separator for Normal Imports.):
+  let g:JavaImpSortPkgSep = 1
+  let g:JavaImpStaticImportsFirst = 1
+  JIS
+
+Expect (Static Imports At Bottom and still above class content.):
+  import static a;
+  import static b;
+  import static c;
+
+  import java.foo.bar;
+
+  import com.foo.bar;
+
+  import android.foo.bar;
+
+  class Foo {
+
+  }
+
+Given (Normal and Static Imports.):
+  import java.foo.bar;
+  import static a;
+  import android.foo.bar;
+  import static b;
+  import com.foo.bar;
+  import static c;
+
+  class Foo {
+
+  }
+
+Execute (Sort Static Imports to the Bottom with a Package Separator for Normal Imports.):
+  let g:JavaImpSortPkgSep = 1
+  let g:JavaImpStaticImportsFirst = 0
+  JIS
+
+Expect (Static Imports At Bottom and still above class content.):
+  import java.foo.bar;
+
+  import com.foo.bar;
+
+  import android.foo.bar;
+
+  import static a;
+  import static b;
+  import static c;
+
+  class Foo {
+
+  }

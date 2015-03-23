@@ -726,13 +726,30 @@ function! <SID>JavaImpSort()
 		call <SID>JavaImpPlaceSortedStaticImports()
 
         if (g:JavaImpSortPkgSep > 0)
-			" Update the Import Statement Range.
+			" Where are All of the Imports?
 			call <SID>JavaImpGotoFirst()
-			let firstImp = line(".")
+			let l:firstImp = line(".")
 			call <SID>JavaImpGotoLast()
-			let lastImp = line(".")
+			let l:lastImp = line(".")
 
-            call <SID>JavaImpAddPkgSep(firstImp, lastImp, g:JavaImpSortPkgSep)
+			" Where are the Static Imports?
+			let l:staticImportsExist = <SID>JavaImpFindFirstStaticImport()
+			let l:firstStaticImp = line(".")
+			call <SID>JavaImpFindLastStaticImport()
+			let l:lastStaticImp = line(".")
+
+			" Update the Import Range so that the Static Imports are not
+			" Included.
+			if (l:staticImportsExist) 
+				if (l:firstStaticImp <= l:firstImp)
+					let l:firstImp = l:lastStaticImp
+				elseif (l:firstStaticImp > l:lastImp)
+					let l:lastImp = l:firstStaticImp - 1
+				endif
+			endif
+
+			" Add the Package Separator.
+            call <SID>JavaImpAddPkgSep(l:firstImp, l:lastImp, g:JavaImpSortPkgSep)
         endif
     endif
 
