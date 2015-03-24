@@ -26,6 +26,9 @@ command! -nargs=? JavaImpFileSplit call <SID>JavaImpFile(1)
 " Default configuration 
 " -------------------------------------------------------------------  
 
+" Determine JavaImp's Installation Directory.
+let s:pluginHome = expand("<sfile>:p:h:h")
+
 if(has("unix"))
     let s:SL = "/"
 elseif(has("win16") || has("win32") || has("win95") ||
@@ -675,85 +678,8 @@ endfunction
 
 " Sort the import statements in the current file.
 function! <SID>JavaImpSort()
-    split
-    let hasImport = <SID>JavaImpGotoFirst()
-    if (hasImport == 0)
-        echom "No import statement found."
-    else
-        let firstImp = line(".")
-        call <SID>JavaImpGotoLast()
-        let lastImp = line(".")
-        if (g:JavaImpSortRemoveEmpty == 1)
-            call <SID>JavaImpRemoveEmpty(firstImp, lastImp)
-            " We need to get the range again
-            call <SID>JavaImpGotoLast()
-            let lastImp = line(".")
-        endif
-
-		" Sort the Import Statements using Vim's Builtin 'sort' Function.
-		execute firstImp . "," . lastImp . "sort"
-
-		" Reverse the Top Import List so that our insertion loop below works
-		" correctly.
-		let l:reversedTopImports = reverse(copy(g:JavaImpTopImports))
-
-		" Insert each matching Top Import in Reverse Order.
-		for l:pattern in l:reversedTopImports
-			" Find the First Import Matching this Pattern.
-			let l:patternFound = <SID>JavaImpGotoFirstMatchingImport(l:pattern, "w")
-			if (l:patternFound)
-				let firstImp = line(".")
-
-				" Find the Last Matching Import.
-				call <SID>JavaImpGotoFirstMatchingImport(l:pattern, "b")
-				let lastImp = line(".")
-
-				" Place this range of lines before that first import.
-				execute firstImp . "," . lastImp . "delete"
-
-				" Find the Line which should contain the first import and
-				" place it.
-				if (<SID>JavaImpGotoPackage() == 0)
-					normal! ggP
-				else
-					normal! jp
-				endif
-
-				" Place the matching imports there.
-			endif
-		endfor
-
-		call <SID>JavaImpPlaceSortedStaticImports()
-
-        if (g:JavaImpSortPkgSep > 0)
-			" Where are All of the Imports?
-			call <SID>JavaImpGotoFirst()
-			let l:firstImp = line(".")
-			call <SID>JavaImpGotoLast()
-			let l:lastImp = line(".")
-
-			" Where are the Static Imports?
-			let l:staticImportsExist = <SID>JavaImpFindFirstStaticImport()
-			let l:firstStaticImp = line(".")
-			call <SID>JavaImpFindLastStaticImport()
-			let l:lastStaticImp = line(".")
-
-			" Update the Import Range so that the Static Imports are not
-			" Included.
-			if (l:staticImportsExist) 
-				if (l:firstStaticImp <= l:firstImp)
-					let l:firstImp = l:lastStaticImp
-				elseif (l:firstStaticImp > l:lastImp)
-					let l:lastImp = l:firstStaticImp - 1
-				endif
-			endif
-
-			" Add the Package Separator.
-            call <SID>JavaImpAddPkgSep(l:firstImp, l:lastImp, g:JavaImpSortPkgSep)
-        endif
-    endif
-
-	close
+	" Source the Parser and Parse Tree Walker to find all referenced classes.
+	execute "pyfile " . s:pluginHome . "/pythonx/jis.py"
 endfunction
 
 " Place Sorted Static Imports either before or after the normal imports
