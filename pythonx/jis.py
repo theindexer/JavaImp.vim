@@ -43,11 +43,26 @@ def sort():
 
 # Update the Buffer with the current ordered list of Import Statements.
 def updateBuffer():
+    # Remove Existing Imports from the Buffer.
     removeImports()
-    # TODO: Buffer is not actually updated just yet.
-    for imprt in importList:
-        print imprt
 
+    # Insert a Line for each Import.
+    # Place the Cursor at the current row.
+    vim.current.window.cursor = (rangeStart, 0)
+    numImports = len(importList)
+    normal(str(numImports + 1) + "O")
+
+    # Insert each import statement.
+    row = rangeStart
+    for imprt in importList:
+        # Change the Line to the Import.
+        vim.current.buffer[row] = imprt
+
+        # Next Line.
+        row += 1
+
+def normal(cmd):
+    vim.command("normal " + cmd)
 
 # TODO: Would be better if this were in a separate file (with this file being a library object).
 parseImports()
