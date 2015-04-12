@@ -678,7 +678,6 @@ endfunction
 
 " Sort the import statements in the current file.
 function! <SID>JavaImpSort()
-	" Source the Parser and Parse Tree Walker to find all referenced classes.
 	execute "pyfile " . s:pluginHome . "/pythonx/jis.py"
 endfunction
 
@@ -720,11 +719,6 @@ function! <SID>JavaImpPlaceSortedStaticImports()
 		endif
 
 	endif
-endfunction
-
-" Remove empty lines in the range
-function! <SID>JavaImpRemoveEmpty(fromLine, toLine)
-    silent exe "" . a:fromLine . "," . a:toLine . ' g/^\s*$/d'
 endfunction
 
 " -------------------------------------------------------------------  
@@ -1002,12 +996,6 @@ function! <SID>JavaImpGotoLast()
 	return <SID>JavaImpGotoFirstMatchingImport('', 'b')
 endfunction
 
-" Go to the last import statement that it can find.  Returns 1 if an import is
-" found, returns 0 if not.
-function! <SID>JavaImpGotoFirst()
-	return <SID>JavaImpGotoFirstMatchingImport('', 'w')
-endfunction
-
 " Go to the last static import statement that it can find.  Returns 1 if an
 " import is found, returns 0 if not.
 function! <SID>JavaImpFindLastStaticImport()
@@ -1114,25 +1102,6 @@ function! <SID>JavaImpChkEnv()
     "echo "Created directory: " . g:JavaImpJarCache
     return 0
 endfunction
-
-" Returns the classname of an import statement
-" For the string "import foo.bar.Frobnicability;"
-" , this returns "Frobnicability" 
-"
-" If not given an import statement, this returns
-" empty string
-function! <SID>JavaImpGetClassname(importStr,depth) 
-    let pkgMatch = '\s*import\s*.*\.[^.]*;$'
-    let pkgGrep = '\s*import\s*.*\.\([^.]*\);$'
-    
-    if (match(a:importStr, pkgMatch) == -1)
-        let classname = ""
-    else
-        let classname = substitute(a:importStr, pkgGrep, '\1', "")
-    endif
-    return classname
-endfunction
-
 
 " Returns the (sub) package name of an import " statement.  
 "
