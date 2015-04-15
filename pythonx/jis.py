@@ -1,6 +1,7 @@
 import vim
 import re
 
+topImports = vim.eval("g:JavaImpTopImports")
 importList = []
 rangeStart = -1
 rangeEnd = -1
@@ -39,7 +40,46 @@ def removeImports():
 
 # Sort the Import List.
 def sort():
+    # Unsorted Import List.
+    global importList
+
+    # Sort the whole list of imports first.
     importList.sort()
+
+    # Interrim sorted list will live here.
+    sortedImportList = list()
+
+    # Iterate over each import pattern in topImports
+    for importPattern in topImports:
+        regex = re.compile("^\s*import\s\s*" + importPattern)
+
+        frstMatch = -1
+        lastMatch = -1
+
+        # Filter out the matching block of imports.
+        for entryNum, importStatement in enumerate(importList):
+            match = regex.match(importStatement)
+            if (match and frstMatch == -1):
+                frstMatch = entryNum
+            elif (not match and frstMatch != -1 and lastMatch == -1):
+                lastMatch = entryNum - 1
+                break
+
+        # If a Range was found.
+        if frstMatch != -1 and lastMatch != -1:
+            # Append the Segment to the Sorted List.
+            sortedImportList.extend(importList[frstMatch:lastMatch + 1])
+
+            # Remove the Segment from the Unsorted List.
+            del(importList[frstMatch:lastMatch + 1])
+
+    # Add Remaining Sorted Imports
+    sortedImportList.extend(importList)
+
+    # Replace the Unsorted Import List.
+    importList = sortedImportList
+
+
 
 # Update the Buffer with the current ordered list of Import Statements.
 def updateBuffer():
