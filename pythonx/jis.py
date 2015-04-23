@@ -2,6 +2,7 @@ import vim
 import re
 
 topImports = vim.eval("g:JavaImpTopImports")
+depth = vim.eval("g:JavaImpSortPkgSep")
 importList = []
 rangeStart = -1
 rangeEnd = -1
@@ -32,11 +33,6 @@ def parseImports():
 
     # Indicate the End of the Import Statement Range.
     rangeEnd = lastMatch
-
-# Remove the Imports from the Buffer.
-# parseImports must be called first.
-def removeImports():
-    del vim.current.buffer[rangeStart:rangeEnd + 2]
 
 # Sort the Import List.
 def sort():
@@ -79,30 +75,24 @@ def sort():
     # Replace the Unsorted Import List.
     importList = sortedImportList
 
-
+def isSeparatorRequired(previousImport, currentImport, depth):
+    return True
 
 # Update the Buffer with the current ordered list of Import Statements.
 def updateBuffer():
+    global importList
+
     # Remove Existing Imports from the Buffer.
-    removeImports()
+    del vim.current.buffer[rangeStart:rangeEnd + 2]
 
-    # Insert a Line for each Import.
-    # Place the Cursor at the current row.
-    vim.current.window.cursor = (rangeStart, 0)
-    numImports = len(importList)
-    normal(str(numImports + 1) + "O")
+    importStartLine = rangeStart - 1
 
-    # Insert each import statement.
-    row = rangeStart
-    for imprt in importList:
-        # Change the Line to the Import.
-        vim.current.buffer[row] = imprt
+    # Append the Sorted List to the Buffer.
+    vim.current.buffer.append(importList, importStartLine)
 
-        # Next Line.
-        row += 1
+    # Insert a newline at the end.
+    vim.current.buffer.append("", importStartLine + len(importList))
 
-def normal(cmd):
-    vim.command("normal " + cmd)
 
 # TODO: Would be better if this were in a separate file (with this file being a library object).
 parseImports()
