@@ -3,24 +3,30 @@ import re
 
 topImports = vim.eval("g:JavaImpTopImports")
 depth = int(vim.eval("g:JavaImpSortPkgSep"))
-importList = []
-rangeStart = -1
-rangeEnd = -1
+importNormalList = []
+importStaticList = []
 
 # Find the Import Statements and parse them into some intermediate data structures.
 def parseImports():
     # TODO: Would be better if these weren't globals.
-    global rangeStart
-    global rangeEnd
-    global importList
+    global importNormalList
+    global importStaticList
 
-    # Compile the Regex to Match Import Statements.
-    regex = re.compile("^\s*import\s\s*")
+    rangeStart = -1
+    rangeEnd = -1
+
+    importBegin = "^\s*import\s+" 
+
+    # Compile the Regex to Match Normal Import Statements.
+    regexNormal = re.compile(importBegin)
+
+    # Compile the Regex to Match Static Import Statements.
+    regexStatic = re.compile(importBegin + "static\s+")
 
     # Find All Import Statements (normal and static).
     lastMatch = -1
     for lineNum, line in enumerate(vim.current.buffer):
-        match = regex.match(line)
+        match = regexNormal.match(line)
         if (match):
             # Indicate the Start of the Import Statement Range if not yet set.
             if rangeStart == -1:
@@ -28,18 +34,23 @@ def parseImports():
 
             lastMatch = lineNum
 
-            # Add this line to the list of import lines.
-            importList.append(line)
+            # Track Static and Normal Imports in different lists.
+            match = regexStatic.match(line)
+            if match:
+                importStaticList.append(line)
+
+            else:
+                importNormalList.append(line)
 
     # Indicate the End of the Import Statement Range.
     rangeEnd = lastMatch
 
-# Sort the Import List.
-def sort():
-    # Unsorted Import List.
-    global importList
+    return (rangeStart, rangeEnd)
 
-    # Sort the whole list of imports first.
+# Sort the Import List.
+def sort(pImportList):
+    # Copy & Sort the whole list of imports first.
+    importList = list(pImportList)
     importList.sort()
 
     # Interrim sorted list will live here.
@@ -75,6 +86,8 @@ def sort():
     # Replace the Unsorted Import List.
     importList = sortedImportList
 
+    return importList
+
 # Determine if a separator is required between the two provided imports, given
 # a depth into the imports to check.  Depth is the number of package levels to
 # check (i.e. the number of dots in the import statement).
@@ -88,10 +101,7 @@ def isSeparatorRequired(prevImport, currImport, depth):
     return prevList != currList
 
 # Insert spacing into a sorted list of packages.
-def insertSpacing():
-    global importList
-    global depth
-
+def insertSpacing(importList, depth):
     # Copy the importList into a separate variable so that we are not iterating
     # over the list we are editing.
     spacedList = list(importList)
@@ -118,24 +128,39 @@ def insertSpacing():
     # Replace the import list with our spaced out copy.
     importList = spacedList
 
-# Update the Buffer with the current ordered list of Import Statements.
-def updateBuffer():
-    global importList
+    return importList
 
+def deleteRange(start, end):
     # Remove Existing Imports from the Buffer.
-    del vim.current.buffer[rangeStart:rangeEnd + 2]
+    del vim.current.buffer[start:end + 2]
 
-    importStartLine = rangeStart - 1
-
+# Update the Buffer with the current ordered list of Import Statements.
+def updateBuffer(startLine, importList):
     # Append the Sorted List to the Buffer.
-    vim.current.buffer.append(importList, importStartLine)
+    vim.current.buffer.append(importList, startLine)
 
     # Insert a newline at the end.
-    vim.current.buffer.append("", importStartLine + len(importList))
+    vim.current.buffer.append("", startLine + len(importList))
 
+    # Return Cursor Position After Inserted Lines.
+    return startLine + len(importList)
 
-# TODO: Would be better if this were in a separate file (with this file being a library object).
-parseImports()
-sort()
-insertSpacing()
-updateBuffer()
+# Extract Normal and Static Imports.
+(rangeStart, rangeEnd) = parseImports()
+
+# Sort Normal Imports.
+importNormalList = sort(importNormalList)
+
+# Sort Static Imports.
+importStaticList = sort(importStaticList)
+
+# Insert Spacing into Normal Import List.
+importNormalList = insertSpacing(importNormalList, depth)
+
+# Remove the range of imports.
+deleteRange(rangeStart, rangeEnd)
+
+## Update the Buffer with Static Imports first, then Normal Imports.
+startLine = rangeStart - 1
+startLine = updateBuffer(startLine, importStaticList) + 1
+startLine = updateBuffer(startLine, importNormalList)
