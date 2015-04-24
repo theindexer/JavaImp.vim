@@ -2,7 +2,7 @@ import vim
 import re
 
 topImports = vim.eval("g:JavaImpTopImports")
-depth = vim.eval("g:JavaImpSortPkgSep")
+depth = int(vim.eval("g:JavaImpSortPkgSep"))
 importList = []
 rangeStart = -1
 rangeEnd = -1
@@ -75,8 +75,48 @@ def sort():
     # Replace the Unsorted Import List.
     importList = sortedImportList
 
-def isSeparatorRequired(previousImport, currentImport, depth):
-    return True
+# Determine if a separator is required between the two provided imports, given
+# a depth into the imports to check.  Depth is the number of package levels to
+# check (i.e. the number of dots in the import statement).
+def isSeparatorRequired(prevImport, currImport, depth):
+    prevList = prevImport.split(".", depth)
+    currList = currImport.split(".", depth)
+
+    del prevList[-1]
+    del currList[-1]
+
+    return prevList != currList
+
+# Insert spacing into a sorted list of packages.
+def insertSpacing():
+    global importList
+    global depth
+
+    # Copy the importList into a separate variable so that we are not iterating
+    # over the list we are editing.
+    spacedList = list(importList)
+
+    # Review each entry of the list, if a separator is required, insert it.
+    row = 0
+    prevImport = ""
+    currImport = ""
+    for currImport in importList:
+        if not prevImport:
+            prevImport = currImport
+
+        if isSeparatorRequired(prevImport, currImport, depth):
+            spacedList.insert(row, "")
+            row += 1
+
+        prevImport = currImport
+        row += 1
+
+    # Remove Last Blank Entry (if present)
+    if not spacedList[-1]:
+        del spacedList[-1]
+
+    # Replace the import list with our spaced out copy.
+    importList = spacedList
 
 # Update the Buffer with the current ordered list of Import Statements.
 def updateBuffer():
@@ -97,4 +137,5 @@ def updateBuffer():
 # TODO: Would be better if this were in a separate file (with this file being a library object).
 parseImports()
 sort()
+insertSpacing()
 updateBuffer()
