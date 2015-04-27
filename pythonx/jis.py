@@ -3,6 +3,7 @@ import re
 
 topImports = vim.eval("g:JavaImpTopImports")
 depth = int(vim.eval("g:JavaImpSortPkgSep"))
+staticFirst = int(vim.eval("g:JavaImpStaticImportsFirst"))
 importNormalList = []
 importStaticList = []
 
@@ -49,6 +50,8 @@ def parseImports():
 
 # Sort the Import List.
 def sort(pImportList):
+    global topImports
+
     # Copy & Sort the whole list of imports first.
     importList = list(pImportList)
     importList.sort()
@@ -58,7 +61,7 @@ def sort(pImportList):
 
     # Iterate over each import pattern in topImports
     for importPattern in topImports:
-        regex = re.compile("^\s*import\s\s*" + importPattern)
+        regex = re.compile("^\s*import\s+" + importPattern)
 
         frstMatch = -1
         lastMatch = -1
@@ -71,6 +74,12 @@ def sort(pImportList):
             elif (not match and frstMatch != -1 and lastMatch == -1):
                 lastMatch = entryNum - 1
                 break
+
+        # Last Match is the last import in the sequence the first match was
+        # detected, but the imports never changed before the end of the import
+        # list.
+        if frstMatch != -1 and lastMatch == -1:
+            lastMatch = len(importList) - 1
 
         # If a Range was found.
         if frstMatch != -1 and lastMatch != -1:
@@ -136,11 +145,13 @@ def deleteRange(start, end):
 
 # Update the Buffer with the current ordered list of Import Statements.
 def updateBuffer(startLine, importList):
-    # Append the Sorted List to the Buffer.
-    vim.current.buffer.append(importList, startLine)
+    # Do not append an empty list since this will insert an additional newline.
+    if len(importList):
+        # Append the Sorted List to the Buffer.
+        vim.current.buffer.append(importList, startLine)
 
-    # Insert a newline at the end.
-    vim.current.buffer.append("", startLine + len(importList))
+        # Insert a newline at the end.
+        vim.current.buffer.append("", startLine + len(importList))
 
     # Return Cursor Position After Inserted Lines.
     return startLine + len(importList)
@@ -162,5 +173,10 @@ deleteRange(rangeStart, rangeEnd)
 
 ## Update the Buffer with Static Imports first, then Normal Imports.
 startLine = rangeStart - 1
-startLine = updateBuffer(startLine, importStaticList) + 1
-startLine = updateBuffer(startLine, importNormalList)
+if staticFirst:
+    startLine = updateBuffer(startLine, importStaticList) + 1
+    startLine = updateBuffer(startLine, importNormalList) + 1
+
+else:
+    startLine = updateBuffer(startLine, importNormalList) + 1
+    startLine = updateBuffer(startLine, importStaticList) + 1
