@@ -145,6 +145,21 @@ def deleteRange(start, end):
 
 # Update the Buffer with the current ordered list of Import Statements.
 def updateBuffer(startLine, importList):
+    # Edge Case.
+    # Handle a situation where the range of imports is supposed to be at the
+    # first line of the file.  The vim module doesn't seem to support this very
+    # well...
+    origLines = []
+    if startLine == -1:
+        # Copy the Original Lines in the Buffer.
+        origLines = vim.current.buffer[:]
+
+        # Delete the Original Lines (Leaving an empty Buffer).
+        del vim.current.buffer[:]
+
+        # Provide a non-negative number so that we insert below the first line.
+        startLine = 0
+
     # Do not append an empty list since this will insert an additional newline.
     if len(importList):
         # Append the Sorted List to the Buffer.
@@ -152,6 +167,15 @@ def updateBuffer(startLine, importList):
 
         # Insert a newline at the end.
         vim.current.buffer.append("", startLine + len(importList))
+
+    # If there were lines in the buffer originally which were deleted in the
+    # Edge Case mentioned above,
+    if origLines:
+        # Append the original lines.
+        vim.current.buffer.append(origLines)
+
+        # Delete the First Line--which will always be blank.
+        del vim.current.buffer[0]
 
     # Return Cursor Position After Inserted Lines.
     return startLine + len(importList)
