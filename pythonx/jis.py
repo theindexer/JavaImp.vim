@@ -131,7 +131,7 @@ def insertSpacing(importList, depth):
         row += 1
 
     # Remove Last Blank Entry (if present)
-    if not spacedList[-1]:
+    if len(spacedList) and not spacedList[-1]:
         del spacedList[-1]
 
     # Replace the import list with our spaced out copy.
