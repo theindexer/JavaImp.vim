@@ -26,6 +26,36 @@ Expect (Sorted list of Java and Non-Java Imports):
 
   }
 
+Given (Some Top Imports and Non-Top Imports):
+  package com.bar.baz.home;
+  
+  import java.io.BufferedReader;
+  import com.bar.bang.baz;
+  import java.util.ArrayList;
+  import baz.barbag;
+
+  class Foo {
+
+  }
+
+
+Execute (Sort them with Top Imports Selected):
+  let g:JavaImpTopImports = ['java\..*', 'javax\..*', 'org\..*', 'com\..*']
+  let g:JavaImpSortPkgSep = 0
+  JIS
+
+Expect (Non-Top Imports at Bottom of List):
+  package com.bar.baz.home;
+  
+  import java.io.BufferedReader;
+  import java.util.ArrayList;
+  import com.bar.bang.baz;
+  import baz.barbag;
+
+  class Foo {
+
+  }
+
 Given (Some Java and Non-Java imports):
   package com.bar.baz.home;
   
@@ -365,3 +395,42 @@ Expect (Static Imports At Bottom and still above class content.):
   class Foo {
 
   }
+
+Given (Some Top Imports and Non-Top Imports):
+  package com.bar.baz.home;
+  
+  import java.io.BufferedReader;
+  import static a;
+  import static b;
+  import com.bar.bang.baz;
+  import java.util.ArrayList;
+  import baz.barbag;
+
+  class Foo {
+
+  }
+
+
+Execute (Sort them with Top Imports Selected and Statics to the Top):
+  let g:JavaImpTopImports = ['java\..*', 'javax\..*', 'org\..*', 'com\..*']
+  let g:JavaImpSortPkgSep = 1
+  let g:JavaImpStaticImportsFirst = 1
+  JIS
+
+Expect (First Static, the Top Imports, then Non-Top Imports at Bottom of List):
+  package com.bar.baz.home;
+  
+  import static a;
+  import static b;
+
+  import java.io.BufferedReader;
+  import java.util.ArrayList;
+
+  import com.bar.bang.baz;
+
+  import baz.barbag;
+
+  class Foo {
+
+  }
+
