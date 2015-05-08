@@ -229,6 +229,7 @@ Given (Static Imports At Top):
   import static a;
   import static b;
   import static c;
+
   import java.bar;
 
   class Foo {
@@ -244,6 +245,7 @@ Expect (Static Imports Still At Top.):
   import static a;
   import static b;
   import static c;
+
   import java.bar;
 
   class Foo {
@@ -254,6 +256,7 @@ Given (Static Imports At Top):
   import static a;
   import static b;
   import static c;
+
   import java.bar;
 
   class Foo {
@@ -267,6 +270,7 @@ Execute (Sort Static Imports to the Bottom.):
 
 Expect (Static Imports At Bottom.):
   import java.bar;
+
   import static a;
   import static b;
   import static c;

@@ -143,23 +143,38 @@ def deleteRange(start, end):
     # Remove Existing Imports from the Buffer.
     del vim.current.buffer[start:end + 2]
 
-# Update the Buffer with the current ordered list of Import Statements.
-def updateBuffer(startLine, importList):
+# Insert a list of lines into the buffer at the provided start line.
+def insertListAtLine(startLine, lineList):
     # Do not append an empty list since this will insert an additional newline.
-    if len(importList):
+    if len(lineList):
 
         # Append the Sorted List to the Buffer.
         # If start line is before the beginning of the file, prepend the list
         # to the buffer.
-        if startLine <= 0:
-            vim.current.buffer[0:0] = importList
+        if startLine < 0:
+            vim.current.buffer[0:0] = lineList
         # Otherwise, append the list below the provided startLine.
         else:
             # Append the Sorted List to the Buffer.
-            vim.current.buffer.append(importList, startLine)
+            vim.current.buffer.append(lineList, startLine)
 
     # Return Cursor Position After Inserted Lines.
-    return startLine + len(importList)
+    return startLine + len(lineList)
+
+# Update the Buffer with the two import lists.  The first list is place before
+# the second list.  The lists will have a single empty line between them.
+def updateBuffer(startLine, firstList, secondList):
+    startLine = insertListAtLine(startLine, firstList)
+
+    if len(firstList) and len(secondList):
+        startLine = insertListAtLine(startLine, [""])
+
+    if len(secondList):
+        startLine = insertListAtLine(startLine, secondList)
+
+    # Insert a newline at the end.
+    startLine = insertListAtLine(startLine, [""])
+
 
 # Extract Normal and Static Imports.
 (rangeStart, rangeEnd) = parseImports()
@@ -179,12 +194,6 @@ deleteRange(rangeStart, rangeEnd)
 ## Update the Buffer with Static Imports first, then Normal Imports.
 startLine = rangeStart - 1
 if staticFirst:
-    startLine = updateBuffer(startLine, importStaticList)
-    startLine = updateBuffer(startLine, importNormalList)
-
+    updateBuffer(startLine, importStaticList, importNormalList)
 else:
-    startLine = updateBuffer(startLine, importNormalList)
-    startLine = updateBuffer(startLine, importStaticList)
-
-# Insert a newline at the end.
-vim.current.buffer.append("", startLine)
+    updateBuffer(startLine, importNormalList, importStaticList)
