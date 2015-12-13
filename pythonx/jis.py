@@ -1,248 +1,237 @@
 import vim
 import re
 
-# TODO: Move all of this into a class.
+class Sorter:
+    IMPORT_BEGIN = "^\s*import\s+" 
 
-importBegin = "^\s*import\s+" 
-topImports = vim.eval("g:JavaImpTopImports")
-depth = int(vim.eval("g:JavaImpSortPkgSep"))
-staticFirst = int(vim.eval("g:JavaImpStaticImportsFirst"))
-importTopImpList = []
-importMiddleList = []
-importStaticList = []
+    def __init__(self):
+        # Initialize lists
+        self._importTopImpList = []
+        self._importMiddleList = []
+        self._importStaticList = []
 
-# Extract and Separate Imports.
-def parseImports():
-    separateImports(extractImports())
+        # Read in Configuration Options
+        self._depth = int(vim.eval("g:JavaImpSortPkgSep"))
+        self._topImports = vim.eval("g:JavaImpTopImports")
+        self._staticFirst = int(vim.eval("g:JavaImpStaticImportsFirst"))
 
-def sortImports():
-    global importTopImpList
-    global importMiddleList
-    global importStaticList
+        # Initialize Import Statement Range
+        self._rangeStart = -1
+        self._rangeEnd = -1
 
-    fullySortedImportStatements = list()
+        # Parse out the Import Statements.
+        self._parseImports()
 
-    # Sort Top Imports
-    regexTopImports = topImports
-    importTopImpList = regexSort(importTopImpList, regexTopImports)
+        # Update the Buffer with the Sorted Import Statements.
+        self._updateBuffer(self._sortImports())
 
-    # Sort Middle Imports.
-    importMiddleList = regexSort(importMiddleList, list())
+    # Extract and Separate Imports.
+    def _parseImports(self):
+        self._separateImports(self._extractImports())
 
-    # Sort Static Imports.
-    importStaticList = regexSort(importStaticList, list())
+    def _sortImports(self):
+        fullySortedImportStatements = list()
 
-    # Add Static Imports first (if configured to do so)
-    if staticFirst:
-        fullySortedImportStatements.extend(importStaticList)
+        # Sort Top Imports
+        regexTopImports = self._topImports
+        self._importTopImpList = self._regexSort(self._importTopImpList, regexTopImports)
 
-    # Add Top Imports
-    fullySortedImportStatements.extend(importTopImpList)
+        # Sort Middle Imports.
+        self._importMiddleList = self._regexSort(self._importMiddleList, list())
 
-    # Add Middle Imports
-    fullySortedImportStatements.extend(importMiddleList)
+        # Sort Static Imports.
+        self._importStaticList = self._regexSort(self._importStaticList, list())
 
-    # Add Static Imports last (if configured to do so)
-    if not staticFirst:
-        fullySortedImportStatements.extend(importStaticList)
+        # Add Static Imports first (if configured to do so)
+        if self._staticFirst:
+            fullySortedImportStatements.extend(self._importStaticList)
 
-    return fullySortedImportStatements
+        # Add Top Imports
+        fullySortedImportStatements.extend(self._importTopImpList)
 
-# Sort the provided importStatements first by the provided importRegexList, then
-# alphanumerically.
-def regexSort(importStatements, importRegexList):
-    global importBegin
+        # Add Middle Imports
+        fullySortedImportStatements.extend(self._importMiddleList)
 
-    regexSortedList = list()
+        # Add Static Imports last (if configured to do so)
+        if not self._staticFirst:
+            fullySortedImportStatements.extend(self._importStaticList)
 
-    # First sort the list alphanumerically.
-    importStatements.sort()
+        return fullySortedImportStatements
 
-    # If the regex list is non-empty
-    if len(importRegexList) > 0:
+    # Sort the provided importStatements first by the provided importRegexList, then
+    # alphanumerically.
+    def _regexSort(self, importStatements, importRegexList):
+        regexSortedList = list()
+
+        # First sort the list alphanumerically.
+        importStatements.sort()
+
+        # If the regex list is non-empty
+        if len(importRegexList) > 0:
+            # Precompile the regexes from the provided list of regex strings.
+            compiledRegexList = list()
+            for regexString in importRegexList:
+                compiledRegexList.append(re.compile(self.IMPORT_BEGIN + regexString))
+
+            # Bucketize the import statements by their matching regex.
+            for compiledRegex in compiledRegexList:
+                for importStatement in importStatements:
+                    if compiledRegex.match(importStatement):
+                        regexSortedList.append(importStatement)
+
+        # If the regex list was empty, the sorted list is the answer.
+        else:
+            regexSortedList = importStatements
+
+        return regexSortedList
+
+    # Given a list of import statements, divide it into top, static and normal
+    # imports.
+    def _separateImports(self, importStatements):
+        # Get list of Static Imports.
+        regexStaticImports = ["static\s+"]
+        self._importStaticList = self._extractImportsGivenRegexList(importStatements, regexStaticImports)
+
+        # Get list of Static Imports.
+        regexTopImports = self._topImports
+        self._importTopImpList = self._extractImportsGivenRegexList(importStatements, regexTopImports)
+
+        # Anything remaining is a Middle Import.
+        self._importMiddleList = importStatements
+
+    # Return a list of all import statements from the buffer.  Set globals which
+    # denote the beginning and end of the range of import statements.
+    def _extractImports(self):
+        self._rangeStart = -1
+        self._rangeEnd = -1
+        
+        importStatements = list()
+        
+        # Compile the Regex to Match Middle Import Statements.
+        regexBeginningOfImportStatment = re.compile(self.IMPORT_BEGIN)
+
+        # Find All Import Statements.
+        lastMatch = -1
+        for lineNum, line in enumerate(vim.current.buffer):
+            if (regexBeginningOfImportStatment.match(line)):
+                # Indicate the Start of the Import Statement Range if not yet set.
+                if self._rangeStart == -1:
+                    self._rangeStart = lineNum
+        
+                lastMatch = lineNum
+                # Add the matching import to the list.
+                importStatements.append(line)
+
+        # Indicate the End of the Import Statement Range.
+        self._rangeEnd = lastMatch
+        
+        return importStatements
+
+    # Return a list of matching imports given a list of import statements and a
+    # list of regular expression strings.
+    def _extractImportsGivenRegexList(self, importStatements, importRegexList):
+        matchingImportsList = list()
+
         # Precompile the regexes from the provided list of regex strings.
         compiledRegexList = list()
         for regexString in importRegexList:
-            compiledRegexList.append(re.compile(importBegin + regexString))
+            compiledRegexList.append(re.compile(self.IMPORT_BEGIN + regexString))
 
-        # Bucketize the import statements by their matching regex.
-        for compiledRegex in compiledRegexList:
-            for importStatement in importStatements:
+        # Iterate over the provided list of import statements.
+        for importStatement in list(importStatements):
+
+            # Iterate over each of the compiled regexes.
+            for compiledRegex in compiledRegexList:
+
+                # If the import statement matches the regex,
                 if compiledRegex.match(importStatement):
-                    regexSortedList.append(importStatement)
+                    # Add the matching import to the list.
+                    matchingImportsList.append(importStatement)
 
-    # If the regex list was empty, the sorted list is the answer.
-    else:
-        regexSortedList = importStatements
+                    # Remove the matching import from the provided list.
+                    importStatements.remove(importStatement)
 
-    return regexSortedList
+                    # The import statement matches, no need to continue checking
+                    # against more regexes.
+                    break
 
-# Given a list of import statements, divide it into top, static and normal
-# imports.
-def separateImports(importStatements):
-    global importTopImpList
-    global importMiddleList
-    global importStaticList
+        return matchingImportsList
 
-    # Get list of Static Imports.
-    regexStaticImports = ["static\s+"]
-    importStaticList = extractImportsGivenRegexList(importStatements, regexStaticImports)
+    # Determine if a separator is required between the two provided imports, given
+    # a depth into the imports to check.  Depth is the number of package levels to
+    # check (i.e. the number of dots in the import statement).
+    def _isSeparatorRequired(self, prevImport, currImport, depth):
+        prevList = prevImport.split(".", depth)
+        currList = currImport.split(".", depth)
 
-    # Get list of Static Imports.
-    regexTopImports = topImports
-    importTopImpList = extractImportsGivenRegexList(importStatements, regexTopImports)
+        del prevList[-1]
+        del currList[-1]
 
-    # Anything remaining is a Middle Import.
-    importMiddleList = importStatements
+        return prevList != currList
 
-# Return a list of all import statements from the buffer.  Set globals which
-# denote the beginning and end of the range of import statements.
-def extractImports():
-    global importBegin
-    global rangeStart
-    global rangeEnd
+    # Insert spacing into a sorted list of packages.
+    def _insertSpacing(self, importStatements, depth):
+        # Copy the importStatements into a separate variable so that we are not iterating
+        # over the list we are editing.
+        spacedList = list(importStatements)
 
-    rangeStart = -1
-    rangeEnd = -1
-    
-    importStatements = list()
-    
-    # Compile the Regex to Match Middle Import Statements.
-    regexBeginningOfImportStatment = re.compile(importBegin)
+        # Review each entry of the list, if a separator is required, insert it.
+        row = 0
+        prevImport = ""
+        currImport = ""
+        for currImport in importStatements:
+            if not prevImport:
+                prevImport = currImport
 
-    # Find All Import Statements.
-    lastMatch = -1
-    for lineNum, line in enumerate(vim.current.buffer):
-        if (regexBeginningOfImportStatment.match(line)):
-            # Indicate the Start of the Import Statement Range if not yet set.
-            if rangeStart == -1:
-                rangeStart = lineNum
-    
-            lastMatch = lineNum
-            # Add the matching import to the list.
-            importStatements.append(line)
+            if self._isSeparatorRequired(prevImport, currImport, depth):
+                spacedList.insert(row, "")
+                row += 1
 
-    # Indicate the End of the Import Statement Range.
-    rangeEnd = lastMatch
-    
-    return importStatements
-
-# Return a list of matching imports given a list of import statements and a
-# list of regular expression strings.
-def extractImportsGivenRegexList(importStatements, importRegexList):
-    global importBegin
-    matchingImportsList = list()
-
-    # Precompile the regexes from the provided list of regex strings.
-    compiledRegexList = list()
-    for regexString in importRegexList:
-        compiledRegexList.append(re.compile(importBegin + regexString))
-
-    # Iterate over the provided list of import statements.
-    for importStatement in list(importStatements):
-
-        # Iterate over each of the compiled regexes.
-        for compiledRegex in compiledRegexList:
-
-            # If the import statement matches the regex,
-            if compiledRegex.match(importStatement):
-                # Add the matching import to the list.
-                matchingImportsList.append(importStatement)
-
-                # Remove the matching import from the provided list.
-                importStatements.remove(importStatement)
-
-                # The import statement matches, no need to continue checking
-                # against more regexes.
-                break
-
-    return matchingImportsList
-
-# Determine if a separator is required between the two provided imports, given
-# a depth into the imports to check.  Depth is the number of package levels to
-# check (i.e. the number of dots in the import statement).
-def isSeparatorRequired(prevImport, currImport, depth):
-    prevList = prevImport.split(".", depth)
-    currList = currImport.split(".", depth)
-
-    del prevList[-1]
-    del currList[-1]
-
-    return prevList != currList
-
-# Insert spacing into a sorted list of packages.
-def insertSpacing(importStatements, depth):
-    # Copy the importStatements into a separate variable so that we are not iterating
-    # over the list we are editing.
-    spacedList = list(importStatements)
-
-    # Review each entry of the list, if a separator is required, insert it.
-    row = 0
-    prevImport = ""
-    currImport = ""
-    for currImport in importStatements:
-        if not prevImport:
             prevImport = currImport
-
-        if isSeparatorRequired(prevImport, currImport, depth):
-            spacedList.insert(row, "")
             row += 1
 
-        prevImport = currImport
-        row += 1
+        # Remove Last Blank Entry (if present)
+        if len(spacedList) and not spacedList[-1]:
+            del spacedList[-1]
 
-    # Remove Last Blank Entry (if present)
-    if len(spacedList) and not spacedList[-1]:
-        del spacedList[-1]
+        return spacedList
 
-    # Replace the import list with our spaced out copy.
-    importStatements = spacedList
+    def _deleteRange(self, start, end):
+        # Remove Existing Imports from the Buffer.
+        del vim.current.buffer[start:end + 2]
 
-    return importStatements
+    # Insert a list of lines into the buffer at the provided start line.
+    def _insertListAtLine(self, startLine, lineList):
+        # Do not append an empty list since this will insert an additional newline.
+        if len(lineList):
 
-def deleteRange(start, end):
-    # Remove Existing Imports from the Buffer.
-    del vim.current.buffer[start:end + 2]
-
-# Insert a list of lines into the buffer at the provided start line.
-def insertListAtLine(startLine, lineList):
-    # Do not append an empty list since this will insert an additional newline.
-    if len(lineList):
-
-        # Append the Sorted List to the Buffer.
-        # If start line is before the beginning of the file, prepend the list
-        # to the buffer.
-        if startLine < 0:
-            vim.current.buffer[0:0] = lineList
-        # Otherwise, append the list below the provided startLine.
-        else:
             # Append the Sorted List to the Buffer.
-            vim.current.buffer.append(lineList, startLine)
+            # If start line is before the beginning of the file, prepend the list
+            # to the buffer.
+            if startLine < 0:
+                vim.current.buffer[0:0] = lineList
+            # Otherwise, append the list below the provided startLine.
+            else:
+                # Append the Sorted List to the Buffer.
+                vim.current.buffer.append(lineList, startLine)
 
-    # Return Cursor Position After Inserted Lines.
-    return startLine + len(lineList)
+        # Return Cursor Position After Inserted Lines.
+        return startLine + len(lineList)
 
-# Update the Buffer with the fully sorted list of import statements, adding
-# empty lines as configured.
-def updateBuffer(fullySortedImportStatements):
-    global rangeStart
-    global rangeEnd
+    # Update the Buffer with the fully sorted list of import statements, adding
+    # empty lines as configured.
+    def _updateBuffer(self, fullySortedImportStatements):
+        # Remove the range of imports.
+        self._deleteRange(self._rangeStart, self._rangeEnd)
 
-    # Remove the range of imports.
-    deleteRange(rangeStart, rangeEnd)
+        # Insert Spacing into Middle Import List.
+        spacedList  = self._insertSpacing(fullySortedImportStatements, self._depth)
 
-    # Insert Spacing into Middle Import List.
-    formattedList  = insertSpacing(fullySortedImportStatements, depth)
+        startLine = self._rangeStart - 1
 
-    startLine = rangeStart - 1
+        startLine = self._insertListAtLine(startLine, spacedList)
 
-    startLine = insertListAtLine(startLine, formattedList)
+        # Insert a newline at the end.
+        startLine = self._insertListAtLine(startLine, [""])
 
-    # Insert a newline at the end.
-    startLine = insertListAtLine(startLine, [""])
-
-# Parse out the Import Statements.
-parseImports()
-
-# Update the Buffer with the Sorted Import Statements.
-updateBuffer(sortImports())
+sorter = Sorter()
