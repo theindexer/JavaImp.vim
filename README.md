@@ -15,7 +15,7 @@ Features
 
 Requirements
 ------------
-- Vim 7+ or Neovim.
+- Vim 7+ (with Python support) or Neovim 0.1.0+.
 - The 'jar' binary must be your path.
 - A web browser such as Chrome or Firefox or a pager such as w3m or lynx.
 
@@ -53,7 +53,7 @@ You need to set two global variables in your .vimrc in order for this to work:
 
 Commands
 ========
-Now you are ready for some commands.  You can now do a:
+Generate a cache of classes for import:
 
     :JavaImpGenerate or :JIG
 
@@ -65,18 +65,12 @@ mappings to the JavaImp.txt and/or the cache files.
 After you've generated your JavaImp.txt file, move your cursor to a class name
 in a Java file and do a:
 
-    :JavaImp or :JI
+    :JavaImp or :JavaImpSilent or :JI
 
 And the magic happens!  You'll realize that you have an extra import statement
 inserted after the last import statement in the file.  It'll also prompts you
 with duplicate class names and insert what you have selected.  If the class
 name is already imported, it'll do nothing.  
-
-Doing a:
-
-    :JavaImpSilent
-
-will do a similar thing with less verbosity.
 
 You can also sort the import statements in the file by doing:
 
@@ -89,7 +83,7 @@ JavaImp will try to find the source file of the class under your cursor by:
 
     :JavaImpFile or :JIF
     
-Doing a :JavaImpFileSplit or :JIFS will open a splitted window on the file.
+Doing a :JavaImpFileSplit or :JIFS will open a split window on the file.
 
 JavaDoc Viewing
 ---------------
@@ -123,15 +117,23 @@ java.vim  filetype plugin to get a similar man page behavior by press "K":
 
     nmap <buffer> K :JID<CR>
 
-Settings
---------------
-You can make the following settings in your Vim config files:
+Import Statement Order
+----------------------
+JavaImp will order your import statements into groups:
+* Statics Imports (if configured to come first)
+* Top Imports
+* Middle Imports
+* Bottom Imports
+* Statics Imports (if configured to come last)
 
-JavaImp will prioritize imports part of java.\*, javax.\*, org.\*, and com.\*
-first (in that order).  This is a reasonable default which matches Eclipse's
-settings.
+Static import statements may come first or last.  The default is to place them
+above the regular imports.  You can override this by setting:
 
-You can override this configuration by setting g:JavaImpTopImports:
+	let g:JavaImpStaticImportsFirst = 0
+
+Top import statements come next.  These are normal import statements which
+match a prioritized list of regular expressions.  JavaImp uses similar setting
+to Eclipse Mars by default:
 
 	let g:JavaImpTopImports = [
 		\ 'java\..*',
@@ -140,10 +142,15 @@ You can override this configuration by setting g:JavaImpTopImports:
 		\ 'com\..*'
 		\ ]
 
-Additionally, you can control the location of the static imports.  The default
-is to place them above the regular imports.  You can override this setting:
+Next come the Middle Imports Statements.  These are any import statements which
+are not static and do not match the top nor bottom import statement regular
+expressions.
 
-	let g:JavaImpStaticImportsFirst = 1
+Bottom Import Statements appear below the Middle Import Statements.  These
+statements will match a configured list of regular expressions.  By default,
+this list is empty:
+
+	let g:JavaImpBottomImports = []
 
 By default, JavaImp will insert a blank line among package group with package
 root for 2 similar levels.  For example, the import of the following:
