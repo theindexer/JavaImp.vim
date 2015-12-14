@@ -8,11 +8,13 @@ class Sorter:
         # Initialize lists
         self._importTopImpList = []
         self._importMiddleList = []
+        self._importBottomList = []
         self._importStaticList = []
 
         # Read in Configuration Options
         self._depth = int(vim.eval("g:JavaImpSortPkgSep"))
         self._topImports = vim.eval("g:JavaImpTopImports")
+        self._bottomImports = vim.eval("g:JavaImpBottomImports")
         self._staticFirst = int(vim.eval("g:JavaImpStaticImportsFirst"))
 
         # Initialize Import Statement Range
@@ -39,6 +41,10 @@ class Sorter:
         # Sort Middle Imports.
         self._importMiddleList = self._regexSort(self._importMiddleList, list())
 
+        # Sort Bottom Imports.
+        regexBottomImports = self._bottomImports
+        self._importBottomList = self._regexSort(self._importBottomList, regexBottomImports)
+
         # Sort Static Imports.
         self._importStaticList = self._regexSort(self._importStaticList, list())
 
@@ -51,6 +57,9 @@ class Sorter:
 
         # Add Middle Imports
         fullySortedImportStatements.extend(self._importMiddleList)
+
+        # Add Bottom Imports
+        fullySortedImportStatements.extend(self._importBottomList)
 
         # Add Static Imports last (if configured to do so)
         if not self._staticFirst:
@@ -92,9 +101,13 @@ class Sorter:
         regexStaticImports = ["static\s+"]
         self._importStaticList = self._extractImportsGivenRegexList(importStatements, regexStaticImports)
 
-        # Get list of Static Imports.
+        # Get list of Top Imports.
         regexTopImports = self._topImports
         self._importTopImpList = self._extractImportsGivenRegexList(importStatements, regexTopImports)
+
+        # Get list of Bottom Imports.
+        regexBottomImports = self._bottomImports
+        self._importBottomList = self._extractImportsGivenRegexList(importStatements, regexBottomImports)
 
         # Anything remaining is a Middle Import.
         self._importMiddleList = importStatements

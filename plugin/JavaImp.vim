@@ -59,6 +59,13 @@ if !exists("g:JavaImpTopImports")
 		\ ]
 endif
 
+" Bottom Imports.
+" Place these import statements after the middle import statements, and before
+" static import statements (if they're configured to come last).
+if !exists("g:JavaImpBottomImports")
+	let g:JavaImpBottomImports = []
+endif
+
 " Put the Static Imports First if 1, otherwise put the Static Imports last.
 " Defaults to 1.
 if !exists("g:JavaImpStaticImportsFirst")
