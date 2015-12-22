@@ -1,10 +1,14 @@
-import vim
+from JavaImp.Vim import Vim
+
 import re
 
 class Sorter:
     IMPORT_BEGIN = "^\s*import\s+" 
 
     def __init__(self):
+        # Initialize Vim Helper
+        self._vim = Vim()
+
         # Initialize lists
         self._importTopImpList = []
         self._importMiddleList = []
@@ -12,10 +16,10 @@ class Sorter:
         self._importStaticList = []
 
         # Read in Configuration Options
-        self._depth = int(vim.eval("g:JavaImpSortPkgSep"))
-        self._topImports = vim.eval("g:JavaImpTopImports")
-        self._bottomImports = vim.eval("g:JavaImpBottomImports")
-        self._staticFirst = int(vim.eval("g:JavaImpStaticImportsFirst"))
+        self._depth = int(self._vim.getSetting("g:JavaImpSortPkgSep"))
+        self._topImports = self._vim.getSetting("g:JavaImpTopImports")
+        self._bottomImports = self._vim.getSetting("g:JavaImpBottomImports")
+        self._staticFirst = int(self._vim.getSetting("g:JavaImpStaticImportsFirst"))
 
         # Initialize Import Statement Range
         self._rangeStart = -1
@@ -125,7 +129,7 @@ class Sorter:
 
         # Find All Import Statements.
         lastMatch = -1
-        for lineNum, line in enumerate(vim.current.buffer):
+        for lineNum, line in enumerate(self._vim.retrieveBuffer()):
             if (regexBeginningOfImportStatment.match(line)):
                 # Indicate the Start of the Import Statement Range if not yet set.
                 if self._rangeStart == -1:
@@ -209,42 +213,20 @@ class Sorter:
 
         return spacedList
 
-    def _deleteRange(self, start, end):
-        # Remove Existing Imports from the Buffer.
-        del vim.current.buffer[start:end + 2]
-
-    # Insert a list of lines into the buffer at the provided start line.
-    def _insertListAtLine(self, startLine, lineList):
-        # Do not append an empty list since this will insert an additional newline.
-        if len(lineList):
-
-            # Append the Sorted List to the Buffer.
-            # If start line is before the beginning of the file, prepend the list
-            # to the buffer.
-            if startLine < 0:
-                vim.current.buffer[0:0] = lineList
-            # Otherwise, append the list below the provided startLine.
-            else:
-                # Append the Sorted List to the Buffer.
-                vim.current.buffer.append(lineList, startLine)
-
-        # Return Cursor Position After Inserted Lines.
-        return startLine + len(lineList)
-
     # Update the Buffer with the fully sorted list of import statements, adding
     # empty lines as configured.
     def _updateBuffer(self, fullySortedImportStatements):
         # Remove the range of imports.
-        self._deleteRange(self._rangeStart, self._rangeEnd)
+        self._vim.deleteRange(self._rangeStart, self._rangeEnd)
 
         # Insert Spacing into Middle Import List.
         spacedList  = self._insertSpacing(fullySortedImportStatements, self._depth)
 
         startLine = self._rangeStart - 1
 
-        startLine = self._insertListAtLine(startLine, spacedList)
+        startLine = self._vim.insertListAtLine(startLine, spacedList)
 
         # Insert a newline at the end.
-        startLine = self._insertListAtLine(startLine, [""])
+        startLine = self._vim.insertListAtLine(startLine, [""])
 
 sorter = Sorter()

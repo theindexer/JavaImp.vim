@@ -685,7 +685,7 @@ endfunction
 
 " Sort the import statements in the current file.
 function! <SID>JavaImpSort()
-	execute "pyfile " . s:pluginHome . "/pythonx/jis.py"
+	execute "pyfile " . s:pluginHome . "/pythonx/JavaImp/jis.py"
 endfunction
 
 " Place Sorted Static Imports either before or after the normal imports
