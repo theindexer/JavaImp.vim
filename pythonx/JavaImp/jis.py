@@ -1,4 +1,5 @@
-from JavaImp.Vim import Vim
+from JavaImp.Vim    import Vim
+from JavaImp.Spacer import Spacer
 
 import re
 
@@ -174,45 +175,6 @@ class Sorter:
 
         return matchingImportsList
 
-    # Determine if a separator is required between the two provided imports, given
-    # a depth into the imports to check.  Depth is the number of package levels to
-    # check (i.e. the number of dots in the import statement).
-    def _isSeparatorRequired(self, prevImport, currImport, depth):
-        prevList = prevImport.split(".", depth)
-        currList = currImport.split(".", depth)
-
-        del prevList[-1]
-        del currList[-1]
-
-        return prevList != currList
-
-    # Insert spacing into a sorted list of packages.
-    def _insertSpacing(self, importStatements, depth):
-        # Copy the importStatements into a separate variable so that we are not iterating
-        # over the list we are editing.
-        spacedList = list(importStatements)
-
-        # Review each entry of the list, if a separator is required, insert it.
-        row = 0
-        prevImport = ""
-        currImport = ""
-        for currImport in importStatements:
-            if not prevImport:
-                prevImport = currImport
-
-            if self._isSeparatorRequired(prevImport, currImport, depth):
-                spacedList.insert(row, "")
-                row += 1
-
-            prevImport = currImport
-            row += 1
-
-        # Remove Last Blank Entry (if present)
-        if len(spacedList) and not spacedList[-1]:
-            del spacedList[-1]
-
-        return spacedList
-
     # Update the Buffer with the fully sorted list of import statements, adding
     # empty lines as configured.
     def _updateBuffer(self, fullySortedImportStatements):
@@ -220,7 +182,8 @@ class Sorter:
         self._vim.deleteRange(self._rangeStart, self._rangeEnd)
 
         # Insert Spacing into Middle Import List.
-        spacedList  = self._insertSpacing(fullySortedImportStatements, self._depth)
+        spacer = Spacer(fullySortedImportStatements, self._depth)
+        spacedList = spacer.getSpacedList()
 
         startLine = self._rangeStart - 1
 
