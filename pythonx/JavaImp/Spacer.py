@@ -1,21 +1,20 @@
 # Given a list of imports and depth sorting parameter, apply spacing to the
 # list.
 class Spacer:
-    def __init__(self, sortedImportList, spacingDepth):
-        self._sortedImportList = sortedImportList
+    def __init__(self, spacingDepth):
         self._spacingDepth = spacingDepth
 
     # Insert spacing into a sorted list of imports.
-    def getSpacedList(self):
-        # Copy the _sortedImportList into a separate variable so that we are not iterating
+    def getSpacedList(self, sortedImportList):
+        # Copy the sortedImportList into a separate variable so that we are not iterating
         # over the list we are editing.
-        spacedList = list(self._sortedImportList)
+        spacedList = list(sortedImportList)
 
         # Review each entry of the list, if a separator is required, insert it.
         row = 0
         prevImport = ""
         currImport = ""
-        for currImport in self._sortedImportList:
+        for currImport in sortedImportList:
             if not prevImport:
                 prevImport = currImport
 
