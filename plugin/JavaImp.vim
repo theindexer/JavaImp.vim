@@ -178,7 +178,7 @@ function! <SID>JavaImpGenerate()
     endif
 
     silent exe "write!" g:JavaImpClassList
-    close
+    cclose
     " Delete the temporary file
 	silent exe "bwipeout! " impfile
     call delete(impfile)
@@ -203,21 +203,28 @@ function! <SID>JavaImpAppendClass(cpath, relativeTo)
             call append(0, a:relativeTo)
         endif
     elseif (isdirectory(a:cpath))
-		" Recursively fetch all Java files from the provided directory path.
+        " Recursively fetch all Java files from the provided directory path.
         let l:javaList = glob(a:cpath . "/**/*.java", 1, 1) 
-		let l:clssList = glob(a:cpath . "/**/*.class", 1, 1) 
-		let l:list = l:javaList + l:clssList
+        let l:clssList = glob(a:cpath . "/**/*.class", 1, 1) 
+        let l:list = l:javaList + l:clssList
 
-		" Include a trailing slash so that we don't leave a slash at the
-		" beginning of the fully qualified classname.
-		let l:cpath = a:cpath . "/"
-		
-		" Add each matching file to the class index buffer.
-		" The format of each entry will be akin to: org/apache/xerces/Bubba
-		for l:filename in l:list
-			let l:filename = substitute(l:filename, l:cpath, "", "g")
-			call append(0, l:filename)
-		endfor
+        " Include a trailing slash so that we don't leave a slash at the
+        " beginning of the fully qualified classname.
+        let l:cpath = a:cpath . "/"
+
+        " Add each matching file to the class index buffer.
+        " The format of each entry will be akin to: org/apache/xerces/Bubba
+        for l:filename in l:list
+            let l:filename = substitute(l:filename, l:cpath, "", "g")
+            call append(0, l:filename)
+        endfor
+
+        " Now that we have handled all java/class files, handle jars
+        let l:jarList = glob(a:cpath . "/**/*.jar", 1, 1)
+
+        for l:jar in l:jarList
+            call <SID>JavaImpAppendClass(l:jar, a:relativeTo)
+        endfor
 
     elseif (match(a:cpath, '\(\.jar$\)') > -1)
         " Check if the jar file exists, if not, we return immediately.
