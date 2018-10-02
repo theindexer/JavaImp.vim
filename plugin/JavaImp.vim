@@ -99,6 +99,14 @@ if !exists("g:JavaImpDocViewer")
     let g:JavaImpDocViewer = "w3m"
 endif
 
+if !exists("g:JavaImpSpacesAfterGroups")
+    let g:JavaImpSpacesAfterGroups = 0
+endif
+
+if !exists("g:JavaImpNewLineAtEnd")
+    let g:JavaImpNewLineAtEnd = 0
+endif
+
 " -------------------------------------------------------------------  
 " Generating the imports table
 " -------------------------------------------------------------------  
