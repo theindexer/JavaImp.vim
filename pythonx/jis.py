@@ -240,7 +240,7 @@ class Sorter:
         # Insert Spacing into Middle Import List.
         spacedList  = self._insertSpacing(fullySortedImportStatements, self._depth)
 
-        startLine = self._rangeStart - 1
+        startLine = self._rangeStart
 
         startLine = self._insertListAtLine(startLine, spacedList)
 
