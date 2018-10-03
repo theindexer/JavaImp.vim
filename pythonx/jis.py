@@ -10,12 +10,17 @@ class Sorter:
         self._importMiddleList = []
         self._importBottomList = []
         self._importStaticList = []
+        self._topInd = 0
+        self._middleInd = 0
+        self._bottomEnd = 0
 
         # Read in Configuration Options
         self._depth = int(vim.eval("g:JavaImpSortPkgSep"))
         self._topImports = vim.eval("g:JavaImpTopImports")
         self._bottomImports = vim.eval("g:JavaImpBottomImports")
         self._staticFirst = int(vim.eval("g:JavaImpStaticImportsFirst"))
+        self._spacesAfterGroups = int(vim.eval("g:JavaImpSpacesAfterGroups"))
+        self._newLineAtEnd = int(vim.eval("g:JavaImpNewLineAtEnd"))
 
         # Initialize Import Statement Range
         self._rangeStart = -1
@@ -65,6 +70,11 @@ class Sorter:
         if not self._staticFirst:
             fullySortedImportStatements.extend(self._importStaticList)
 
+        #Create vertical indices for groups. +1 for spaces
+        #self._topInd = len(self._importTopImpList)+1
+        self._middleInd = self._topInd + len(self._importMiddleList)+1
+        self._bottomInd = self._middleInd + len(self._importBottomList)+1
+
         return fullySortedImportStatements
 
     # Sort the provided importStatements first by the provided importRegexList, then
@@ -101,13 +111,13 @@ class Sorter:
         regexStaticImports = ["static\s+"]
         self._importStaticList = self._extractImportsGivenRegexList(importStatements, regexStaticImports)
 
-        # Get list of Top Imports.
-        regexTopImports = self._topImports
-        self._importTopImpList = self._extractImportsGivenRegexList(importStatements, regexTopImports)
-
         # Get list of Bottom Imports.
         regexBottomImports = self._bottomImports
         self._importBottomList = self._extractImportsGivenRegexList(importStatements, regexBottomImports)
+
+        # Get list of Top Imports.
+        regexTopImports = self._topImports
+        self._importTopImpList = self._extractImportsGivenRegexList(importStatements, regexTopImports)
 
         # Anything remaining is a Middle Import.
         self._importMiddleList = importStatements
@@ -200,6 +210,21 @@ class Sorter:
                 spacedList.insert(row, "")
                 row += 1
 
+            if self._spacesAfterGroups:
+                if row == 0:
+                    spacedList.insert(row, "")
+                    row += 1
+            
+                elif row == self._middleInd:
+                    spacedList.insert(row, "")
+                    row += 1
+
+                #need to check if the bottom list is there. otherwise don't 
+                #put a space
+                elif row == self._bottomInd and len(self._importStaticList) != 0:
+                    spacedList.insert(row, "")
+                    row += 1
+
             prevImport = currImport
             row += 1
 
@@ -245,6 +270,7 @@ class Sorter:
         startLine = self._insertListAtLine(startLine, spacedList)
 
         # Insert a newline at the end.
-        startLine = self._insertListAtLine(startLine, [""])
+        if self._newLineAtEnd:
+            startLine = self._insertListAtLine(startLine, [""])
 
 sorter = Sorter()

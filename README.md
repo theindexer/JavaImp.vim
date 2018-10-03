@@ -76,6 +76,12 @@ You can also sort the import statements in the file by doing:
 
     :JavaImpSort or :JIS
 
+You can add spaces after each of the "groups" described above by setting
+let g:JavaImpSpacesAfterGroups = 1
+
+You can automatically add a new line at the end of the import block with:
+let g:JavaImpNewLineAtEnd = 1
+
 Source Viewing
 --------------
 
