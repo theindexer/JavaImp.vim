@@ -2,6 +2,7 @@
 " Mappings 
 " -------------------------------------------------------------------  
 
+command! -nargs=? I                call <SID>JavaImpInsertClass(<f-args>, 0)
 command! -nargs=? JIX              call <SID>JavaImpQuickFix()
 command! -nargs=? JI               call <SID>JavaImpInsert(1)
 command! -nargs=? JavaImp          call <SID>JavaImpInsert(1)
@@ -390,50 +391,60 @@ function! <SID>JavaImpInsert(verboseMode)
                 endif
             endif
         else
-            let importLine = "import " . fullClassName . ";"
-            " Split before we jump
-            split
-
-            let hasImport = <SID>JavaImpGotoLast()
-            let importLoc = line('.')
-
-            let hasPackage = <SID>JavaImpGotoPackage()
-            if (hasPackage == 1)
-                let pkgLoc = line('.')
-                let pkgPat = '^\s*package\s\+\(\%(\w\+\.\)*\w\+\)\s*;.*$'
-                let pkg = substitute(getline(pkgLoc), pkgPat, '\1', '')
-
-                " Check to see if the class is in this package, we won't
-                " need an import.
-                if (fullClassName == (pkg . '.' . className))
-                    let importLoc = -1
-                else
-                    if (hasImport == 0)
-                        " Add an extra blank line after the package before
-                        " the import
-                        exec verbosity 'call append(pkgLoc, "")'
-                        let importLoc = pkgLoc + 1
-                    endif
-                endif
-            elseif (hasImport == 0)
-                let importLoc = 0
-            endif
-
-            exec verbosity 'call append(importLoc, importLine)'
-
-            if a:verboseMode
-                if (importLoc >= 0)
-                    echo "Inserted " . fullClassName . " for " . className 
-                else
-                    echo "Import unneeded (same package): " . fullClassName
-                endif
-            endif 
-
-            " go back to the old location
-            close
-
+            call <SID>JavaImpInsertClass(fullClassName, a:verboseMode)
         endif
     endif
+endfunction
+
+function! <SID>JavaImpInsertClass(fullClassName, verboseMode)
+    let fullClassName = a:fullClassName
+    if a:verboseMode
+        let verbosity = ""
+    else
+        let verbosity = "silent"
+    end
+    let importLine = "import " . fullClassName . ";"
+    " Split before we jump
+    split
+
+    let hasImport = <SID>JavaImpGotoLast()
+    let importLoc = line('.')
+
+    let hasPackage = <SID>JavaImpGotoPackage()
+    if (hasPackage == 1)
+        let pkgLoc = line('.')
+        let pkgPat = '^\s*package\s\+\(\%(\w\+\.\)*\w\+\)\s*;.*$'
+        let pkg = substitute(getline(pkgLoc), pkgPat, '\1', '')
+
+        " Check to see if the class is in this package, we won't
+        " need an import.
+        "if (fullClassName == (pkg . '.' . className))
+        "    let importLoc = -1
+        "else
+            if (hasImport == 0)
+                " Add an extra blank line after the package before
+                " the import
+                exec verbosity 'call append(pkgLoc, "")'
+                let importLoc = pkgLoc + 1
+            endif
+        "endif
+    elseif (hasImport == 0)
+        let importLoc = 0
+    endif
+
+    exec verbosity 'call append(importLoc, importLine)'
+
+    if a:verboseMode
+        if (importLoc >= 0)
+            echo "Inserted " . fullClassName . " for " . className 
+        else
+            echo "Import unneeded (same package): " . fullClassName
+        endif
+    endif 
+
+    " go back to the old location
+    close
+
 endfunction
 
 " Given a classname, try to search the current file for the import statement.
