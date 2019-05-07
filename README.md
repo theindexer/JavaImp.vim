@@ -4,6 +4,15 @@ Short and sweet:  JavaImp generates and sorts your import statements so that
 you don't have to.  It is also able to display JavaDoc HTML in a web browser of
 your choice.
 
+Additions in Fork
+-----------------
+Branch add_imports_manually
+
+:I com.your.package.Class to manually import from anywhere in a project
+
+I suppose you could macro something to bookmark the current spot,
+jump to the package decl add it and go back but w/e
+
 Features
 --------
 - Import Statement Management:
